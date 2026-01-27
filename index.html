@@ -1,0 +1,2244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correctional Shift Management - Cost Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #2563EB;
+            --dark-blue: #1E40AF;
+            --light-blue: #DBEAFE;
+            --pain-orange: #C2410C;
+            --pain-dark: #92400E;
+            --bg-gray: #F8FAFC;
+            --border-gray: #E2E8F0;
+            --text-dark: #0F172A;
+            --text-medium: #475569;
+            --text-light: #94A3B8;
+            --success-green: #10B981;
+            --cost-red: #DC2626;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, #F8FAFC 0%, #E0E7FF 100%);
+            color: var(--text-dark);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            padding: 50px;
+            max-width: 500px;
+            width: 100%;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-header h1 {
+            font-size: 32px;
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: var(--text-medium);
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid var(--border-gray);
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .error-message {
+            background: #FEE2E2;
+            color: #991B1B;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.5s ease;
+        }
+
+        .app-container {
+            display: none;
+            max-width: 1900px;
+            margin: 0 auto;
+        }
+
+        .app-container.active {
+            display: block;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .top-bar h1 {
+            font-size: 28px;
+            color: var(--primary-blue);
+        }
+
+        .top-bar-subtitle {
+            font-size: 14px;
+            color: var(--text-medium);
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .cost-badge {
+            background: linear-gradient(135deg, var(--cost-red), #B91C1C);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: 700;
+            display: inline-block;
+            margin-top: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .cost-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+        }
+
+        .top-bar-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            background: var(--bg-gray);
+            padding: 6px;
+            border-radius: 10px;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-medium);
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            background: white;
+            color: var(--primary-blue);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-success {
+            background: var(--success-green);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--border-gray);
+            color: var(--text-dark);
+        }
+
+        .btn-secondary:hover {
+            background: #CBD5E1;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            background: var(--bg-gray);
+            border-radius: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        /* Main Content */
+        .main-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 40px;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 30px;
+            padding: 20px 30px;
+            background: var(--bg-gray);
+            border-radius: 12px;
+            border: 2px solid var(--border-gray);
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .legend-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .legend-icon.person {
+            background: var(--text-dark);
+            color: white;
+        }
+
+        .legend-icon.action {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .legend-icon.pain {
+            background: var(--pain-orange);
+            color: white;
+        }
+
+        /* Phase Navigation */
+        .phase-nav {
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .phase-nav-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-medium);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .chevron-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .chevron-item {
+            position: relative;
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            color: white;
+            padding: 16px 45px 16px 30px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%, 20px 50%);
+            margin-left: -15px;
+            z-index: 1;
+            white-space: nowrap;
+            flex-shrink: 0;
+            text-align: center;
+            border: none;
+        }
+
+        .chevron-item:first-child {
+            margin-left: 0;
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%);
+            padding-left: 30px;
+        }
+
+        .chevron-item:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.1);
+            z-index: 2;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .chevron-item.active {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            z-index: 3;
+        }
+
+        .chevron-item[data-tooltip] {
+            position: relative;
+        }
+
+        .chevron-item[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1F2937;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            z-index: 10000;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.2s ease;
+            pointer-events: none;
+            line-height: 1.4;
+        }
+
+        .chevron-item[data-tooltip]:hover::before {
+            content: '';
+            position: absolute;
+            bottom: calc(100% + 4px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #1F2937;
+            z-index: 10000;
+            pointer-events: none;
+        }
+
+        .chevron-number {
+            display: block;
+            font-size: 11px;
+            opacity: 0.9;
+            margin-bottom: 2px;
+        }
+
+        .chevron-label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .chevron-cost {
+            display: block;
+            font-size: 11px;
+            opacity: 0.95;
+            font-weight: 800;
+            color: #FCD34D;
+        }
+
+        /* Phase Section */
+        .phase-section {
+            margin-bottom: 60px;
+            padding: 30px;
+            background: linear-gradient(to right, rgba(37, 99, 235, 0.03), rgba(219, 234, 254, 0.3));
+            border-left: 5px solid var(--primary-blue);
+            border-radius: 12px;
+            scroll-margin-top: 180px;
+        }
+
+        .phase-header {
+            margin-bottom: 30px;
+        }
+
+        .phase-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 8px;
+        }
+
+        .phase-time {
+            font-size: 15px;
+            color: var(--text-medium);
+            font-weight: 500;
+        }
+
+        .phase-cost {
+            font-size: 18px;
+            color: var(--cost-red);
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        /* Flow Diagram */
+        .flow-diagram {
+            position: relative;
+            padding: 40px 20px;
+            min-height: 400px;
+        }
+
+        .swimlane {
+            position: relative;
+            min-height: 100px;
+            border-bottom: 2px dashed var(--border-gray);
+            padding: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .swimlane:last-child {
+            border-bottom: none;
+        }
+
+        .persona-label {
+            width: 180px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            background: white;
+            border: 2px solid var(--border-gray);
+            border-radius: 10px;
+        }
+
+        .persona-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--text-dark);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .persona-name {
+            font-weight: 600;
+            font-size: 13px;
+            line-height: 1.3;
+        }
+
+        .flow-content {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .action-flow-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: nowrap;
+            position: relative;
+        }
+
+        .action-with-pain {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .action-box {
+            position: relative;
+            background: white;
+            border: 3px solid var(--primary-blue);
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .action-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .flow-arrow {
+            color: var(--text-medium);
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 5px;
+        }
+
+        /* Pain Point Callout */
+        .pain-callout {
+            position: relative;
+            background: linear-gradient(135deg, var(--pain-orange), var(--pain-dark));
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            line-height: 1.4;
+            max-width: 320px;
+            box-shadow: 0 8px 24px rgba(194, 65, 12, 0.3);
+            z-index: 10;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 25px;
+        }
+
+        .pain-callout:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(194, 65, 12, 0.4);
+        }
+
+        .pain-callout::before {
+            content: '';
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-bottom: 18px solid var(--pain-orange);
+            filter: drop-shadow(0 -2px 4px rgba(194, 65, 12, 0.2));
+        }
+
+        .pain-callout.above {
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        .pain-callout.above::before {
+            top: auto;
+            bottom: -18px;
+            border-bottom: none;
+            border-top: 18px solid var(--pain-dark);
+            filter: drop-shadow(0 2px 4px rgba(194, 65, 12, 0.2));
+        }
+
+        .pain-cost {
+            display: block;
+            font-size: 16px;
+            font-weight: 800;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            margin-left: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .info-icon:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
+        }
+
+        /* Citation Drawer */
+        .citation-drawer {
+            position: fixed;
+            right: -500px;
+            top: 0;
+            width: 500px;
+            height: 100vh;
+            background: white;
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .citation-drawer.open {
+            right: 0;
+        }
+
+        .drawer-header {
+            background: linear-gradient(135deg, var(--pain-orange), var(--pain-dark));
+            color: white;
+            padding: 25px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .drawer-header h3 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .drawer-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .drawer-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .drawer-content {
+            padding: 30px;
+        }
+
+        .drawer-section {
+            margin-bottom: 30px;
+        }
+
+        .drawer-section h4 {
+            color: var(--primary-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .drawer-section p {
+            color: var(--text-dark);
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .cost-breakdown {
+            background: var(--bg-gray);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--cost-red);
+        }
+
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .cost-item .label {
+            color: var(--text-medium);
+            font-weight: 600;
+        }
+
+        .cost-item .value {
+            color: var(--cost-red);
+            font-weight: 700;
+        }
+
+        .citation-source {
+            background: white;
+            border: 2px solid var(--border-gray);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .source-title {
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .source-excerpt {
+            color: var(--text-dark);
+            font-size: 13px;
+            line-height: 1.6;
+            font-style: italic;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: var(--bg-gray);
+            border-left: 3px solid var(--primary-blue);
+        }
+
+        .source-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .source-link:hover {
+            color: var(--dark-blue);
+            gap: 12px;
+        }
+
+        /* Overlay */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .drawer-overlay.active {
+            display: block;
+        }
+
+        /* Edit Mode Controls */
+        .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #EF4444;
+            color: white;
+            border: 2px solid white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            transition: all 0.2s ease;
+        }
+
+        .delete-btn:hover {
+            background: #DC2626;
+            transform: scale(1.1);
+        }
+
+        .edit-mode .delete-btn {
+            display: flex;
+        }
+
+        .add-btn-inline {
+            padding: 10px 20px;
+            border: 2px dashed var(--border-gray);
+            background: white;
+            border-radius: 8px;
+            color: var(--text-medium);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .edit-mode .add-btn-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .add-btn-inline:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            background: var(--light-blue);
+        }
+
+        .add-flow-btn {
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed var(--border-gray);
+            background: white;
+            border-radius: 10px;
+            color: var(--text-medium);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+            margin-top: 15px;
+        }
+
+        .edit-mode .add-flow-btn {
+            display: block;
+        }
+
+        .add-flow-btn:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            background: var(--light-blue);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 35px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .modal-content.large {
+            max-width: 900px;
+        }
+
+        .breakdown-chart {
+            margin: 30px 0;
+        }
+
+        .breakdown-item {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: var(--bg-gray);
+            border-radius: 12px;
+            border-left: 5px solid var(--cost-red);
+            transition: all 0.3s ease;
+        }
+
+        .breakdown-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .breakdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .breakdown-category {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--primary-blue);
+        }
+
+        .breakdown-value {
+            font-weight: 800;
+            font-size: 18px;
+            color: var(--cost-red);
+        }
+
+        .breakdown-bar {
+            height: 30px;
+            background: linear-gradient(90deg, var(--cost-red), #EF4444);
+            border-radius: 6px;
+            position: relative;
+            margin: 10px 0;
+        }
+
+        .breakdown-percentage {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .breakdown-description {
+            font-size: 14px;
+            color: var(--text-medium);
+            line-height: 1.6;
+            margin-top: 8px;
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .summary-box h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .summary-box .big-number {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 10px 0;
+        }
+
+        .summary-box .subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            color: var(--primary-blue);
+        }
+
+        .close-modal {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: var(--bg-gray);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--text-medium);
+        }
+
+        .close-modal:hover {
+            background: var(--border-gray);
+        }
+
+        .modal-body {
+            margin-bottom: 25px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        textarea, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--border-gray);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 16px 24px;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 2000;
+            animation: slideInRight 0.3s ease;
+            max-width: 400px;
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success-green);
+        }
+
+        .notification.error {
+            border-left: 4px solid #EF4444;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .info-box {
+            background: #DBEAFE;
+            border: 2px solid var(--primary-blue);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .info-box h3 {
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: var(--text-dark);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .info-box code {
+            background: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .top-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .swimlane {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                padding: 30px 10px;
+            }
+
+            .persona-label {
+                width: 100%;
+            }
+
+            .flow-content {
+                width: 100%;
+                padding-left: 20px;
+            }
+
+            .pain-callout {
+                position: static;
+                margin: 10px 0;
+            }
+
+            .pain-callout::before {
+                display: none;
+            }
+
+            .citation-drawer {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>🔐 Workflow Cost Analyzer</h1>
+                <p>Correctional Shift Management with Overtime Cost Analysis</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Your Name</label>
+                    <input type="text" id="username" placeholder="Enter your name" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Access Code</label>
+                    <input type="password" id="password" placeholder="Enter access code" required>
+                </div>
+                <button type="submit" class="login-btn">
+                    Access Workflow
+                </button>
+                <div class="error-message" id="errorMessage">
+                    ❌ Incorrect access code. Please try again.
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container" id="appContainer">
+        <div class="top-bar">
+            <div>
+                <h1>📊 Correctional Shift Management</h1>
+                <div class="top-bar-subtitle">National Overtime Cost Analysis</div>
+                <div class="cost-badge" onclick="showCostBreakdown()">💰 Est. $2.5B+ Annual OT Cost</div>
+            </div>
+            <div class="top-bar-actions">
+                <div class="mode-toggle">
+                    <button class="mode-btn active" data-mode="view">👁 View</button>
+                    <button class="mode-btn" data-mode="edit">✏️ Edit</button>
+                </div>
+                <button class="btn btn-success" id="saveChanges" style="display: none;">
+                    💾 Save Changes
+                </button>
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <span id="currentUsername">User</span>
+                </div>
+                <button class="btn btn-secondary" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+
+        <div class="main-content view-mode" id="mainContent">
+            <!-- Phase Navigation -->
+            <div class="phase-nav">
+                <div class="phase-nav-title">📍 Navigate to Phase</div>
+                <div class="chevron-container" id="chevronNav"></div>
+            </div>
+
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-icon person">👤</div>
+                    <span>Person/Role</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon action">→</div>
+                    <span>Action Flow</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon pain">💰</div>
+                    <span>Pain Point with Cost</span>
+                </div>
+            </div>
+
+            <div id="phasesContainer"></div>
+        </div>
+    </div>
+
+    <!-- Citation Drawer -->
+    <div class="citation-drawer" id="citationDrawer">
+        <div class="drawer-header">
+            <h3>Overtime Cost Analysis</h3>
+            <button class="drawer-close" onclick="closeDrawer()">✕</button>
+        </div>
+        <div class="drawer-content" id="drawerContent">
+            <!-- Content will be dynamically populated -->
+        </div>
+    </div>
+
+    <!-- Drawer Overlay -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+    <!-- Edit Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Edit Item</h2>
+                <button class="close-modal" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be dynamically populated -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-success" id="modalSave">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost Breakdown Modal -->
+    <div class="modal" id="breakdownModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>National Correctional Overtime Cost Breakdown</h2>
+                <button class="close-modal" onclick="closeBreakdownModal()">✕</button>
+            </div>
+            <div class="modal-body" id="breakdownContent">
+                <!-- Content will be dynamically populated -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBreakdownModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ACCESS_CODE = 'workflow2026';
+        const STORAGE_KEY = 'workflow-cost-data';
+        
+        let workflowData = null;
+        let isEditMode = false;
+        let currentEditItem = null;
+        let currentUser = null;
+
+        // DEFAULT DATA WITH COST ESTIMATES AND CITATIONS
+        const DEFAULT_DATA = {
+            phases: [
+                {
+                    id: 'phase1',
+                    title: '📋 Phase 1: Pre-Shift Planning',
+                    time: '5:30 AM - 6:00 AM',
+                    estimatedCost: '$420M',
+                    flows: [
+                        {
+                            persona: { name: 'Scheduling Coordinator', avatar: 'SC' },
+                            actions: [
+                                { text: 'Review Roster', hasPain: false },
+                                { 
+                                    text: 'Identify Call-Outs', 
+                                    hasPain: true, 
+                                    painText: 'Last-minute call-outs require emergency OT within 30-60 min',
+                                    painPosition: 'above',
+                                    costEstimate: '$420M',
+                                    costContext: 'Emergency call-out response accounts for approximately 17% of total correctional overtime costs nationwide. Based on data from multiple states, facilities average 3-5 emergency call-outs per week requiring immediate overtime coverage.',
+                                    citations: [
+                                        {
+                                            title: 'The Marshall Project: Data Reveals Prison Crisis',
+                                            excerpt: 'From 2019 to 2022, corrections staff decreased by about one-third in Georgia. During that time, the state\'s spending on overtime for prison workers ballooned to more than $4 million, more than 11 times as high as the pre-pandemic level.',
+                                            url: 'https://www.themarshallproject.org/2024/01/10/prison-correctional-officer-shortage-overtime-data'
+                                        },
+                                        {
+                                            title: 'Prison Policy Initiative: Understaffing Crisis',
+                                            excerpt: 'Despite heavy investments in recruitment in New Hampshire in recent years, the department of corrections ran up a $3.4 million deficit trying to operate state prisons with roughly half its workforce.',
+                                            url: 'https://www.prisonpolicy.org/blog/2024/12/09/understaffing/'
+                                        }
+                                    ]
+                                },
+                                { text: 'Check Staffing', hasPain: false }
+                            ]
+                        },
+                        {
+                            persona: { name: 'Night Lieutenant', avatar: 'LT' },
+                            actions: [
+                                { text: 'Provide Handoff', hasPain: false },
+                                { text: 'Report Incidents', hasPain: false }
+                            ]
+                        },
+                        {
+                            persona: { name: 'On-Call Officers', avatar: 'CO' },
+                            actions: [
+                                { text: 'Contacted for OT', hasPain: false },
+                                { 
+                                    text: 'Respond to Call', 
+                                    hasPain: true, 
+                                    painText: 'Officers don\'t answer phones at 5:30 AM – delays coverage',
+                                    painPosition: 'below',
+                                    costEstimate: '$180M',
+                                    costContext: 'Delayed response to early morning call-outs results in extended shifts for on-duty officers and increased mandatory overtime. Estimated 7% of total OT costs attributed to delayed emergency coverage.',
+                                    citations: [
+                                        {
+                                            title: 'Connecticut DOC Overtime Analysis',
+                                            excerpt: 'The state\'s Department of Correction doled out a total of $110.8 million in overtime to correction officers in 2024 – a 30.5% increase from 2015. Many of the extra hours are mandatory to cover required prison shifts.',
+                                            url: 'https://www.corrections1.com/jail-management/mandatory-ot-16-hour-days-drive-conn-doc-overtime-past-110m'
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 'phase2',
+                    title: '📢 Phase 2: Shift Briefing',
+                    time: '5:45 AM - 6:15 AM',
+                    estimatedCost: '$290M',
+                    flows: [
+                        {
+                            persona: { name: 'Shift Sergeant', avatar: 'SS' },
+                            actions: [
+                                { 
+                                    text: 'Conduct Briefing', 
+                                    hasPain: true, 
+                                    painText: 'Short-staffed = rushed briefings miss critical safety info',
+                                    painPosition: 'above',
+                                    costEstimate: '$150M',
+                                    costContext: 'Inadequate briefings due to understaffing lead to incidents requiring supervisory overtime and emergency response. Approximately 6% of total correctional OT costs.',
+                                    citations: [
+                                        {
+                                            title: 'Vera Institute: Price of Prisons 2015',
+                                            excerpt: 'Personnel costs—including salaries, overtime, and benefits—comprised the lion\'s share of state prison expenditures, making up more than two-thirds (68 percent) of total spending in 2015.',
+                                            url: 'https://www.vera.org/publications/price-of-prisons-2015-state-spending-trends/price-of-prisons-2015-state-spending-trends/price-of-prisons-2015-state-spending-trends-prison-spending'
+                                        }
+                                    ]
+                                },
+                                { text: 'Announce Posts', hasPain: false },
+                                { text: 'Issue Equipment', hasPain: false }
+                            ]
+                        },
+                        {
+                            persona: { name: 'Correctional Officers', avatar: 'CO' },
+                            actions: [
+                                { text: 'Arrive & Check In', hasPain: false },
+                                { 
+                                    text: 'Receive Assignment', 
+                                    hasPain: true, 
+                                    painText: 'Officers assigned to unfamiliar posts increase OT risk',
+                                    painPosition: 'below',
+                                    costEstimate: '$140M',
+                                    costContext: 'Officers working unfamiliar posts require additional supervisory support and extended shifts for training, contributing approximately 5-6% of total overtime costs.',
+                                    citations: [
+                                        {
+                                            title: 'Illinois Department of Corrections Overtime Report',
+                                            excerpt: 'The Illinois Department of Correction\'s staff collectively worked nearly 2 million hours of overtime during the 2022 fiscal year, costing the department $95.5 million.',
+                                            url: 'https://www.prisonpolicy.org/blog/2024/12/09/understaffing/'
+                                        }
+                                    ]
+                                },
+                                { text: 'Get Equipment', hasPain: false }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 'phase3',
+                    title: '🔄 Phase 3: Shift Handoff',
+                    time: '6:00 AM - 6:30 AM',
+                    estimatedCost: '$380M',
+                    flows: [
+                        {
+                            persona: { name: 'Night Shift Officer', avatar: 'NS' },
+                            actions: [
+                                { 
+                                    text: 'Verbal Handoff', 
+                                    hasPain: true, 
+                                    painText: 'Rushed handoffs = info lost, requiring supervisors to stay for OT',
+                                    painPosition: 'above',
+                                    costEstimate: '$200M',
+                                    costContext: 'Inadequate shift handoffs require supervisory overtime to address information gaps and incidents. Represents approximately 8% of national correctional overtime spending.',
+                                    citations: [
+                                        {
+                                            title: 'New York State Comptroller: Overtime Analysis',
+                                            excerpt: 'Average annual overtime hours per Corrections employee grew 26.3% from 2023 to 325 annual overtime hours in 2024, with the increase coinciding with a workforce reduction of more than 1,000 in that year.',
+                                            url: 'https://www.osc.ny.gov/press/releases/2025/07/dinapoli-state-agency-overtime-costs-increased-10.2-percent-in-2024-up-1.8m-hours-over-2023'
+                                        }
+                                    ]
+                                },
+                                { text: 'Complete Reports', hasPain: false },
+                                { text: 'Turn In Keys', hasPain: false }
+                            ]
+                        },
+                        {
+                            persona: { name: 'Day Shift Officer', avatar: 'DS' },
+                            actions: [
+                                { text: 'Receive Handoff', hasPain: false },
+                                { text: 'Inspect Post', hasPain: false },
+                                { 
+                                    text: 'Begin Count', 
+                                    hasPain: true, 
+                                    painText: 'Count discrepancies lock down facility – all officers held',
+                                    painPosition: 'below',
+                                    costEstimate: '$180M',
+                                    costContext: 'Count discrepancies require facility-wide lockdowns and mandatory overtime for all officers until resolved. Estimated 7% of total overtime costs.',
+                                    citations: [
+                                        {
+                                            title: 'Nebraska Corrections Overtime Audit',
+                                            excerpt: 'Correctional staff were paid $22 million in overtime in 2023. Experienced correctional guards can earn over $150,000 annually in wages, overtime, and compensatory time.',
+                                            url: 'https://www.corrections1.com/jail-management/neb-prison-employees-paid-22m-in-overtime-in-2023-auditor-says'
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 'phase4',
+                    title: '⚡ Phase 4: Mid-Shift Operations',
+                    time: '8:00 AM - 4:00 PM',
+                    estimatedCost: '$625M',
+                    flows: [
+                        {
+                            persona: { name: 'Post Officers', avatar: 'CO' },
+                            actions: [
+                                { text: 'Security Rounds', hasPain: false },
+                                { text: 'Supervise Inmates', hasPain: false },
+                                { 
+                                    text: 'Process Movement', 
+                                    hasPain: true, 
+                                    painText: 'No spare capacity – any incident pulls officers requiring OT',
+                                    painPosition: 'above',
+                                    costEstimate: '$375M',
+                                    costContext: 'Operating at minimum staffing means any incident requires immediate overtime coverage. This accounts for approximately 15% of total national correctional overtime costs.',
+                                    citations: [
+                                        {
+                                            title: 'Prison Legal News: All 50 States Report Understaffing',
+                                            excerpt: 'California spent $340 million on overtime compensation in 2015. New York state prisons spent $221 million on overtime in 2017. Pennsylvania\'s Department of Corrections spent $108 million in overtime.',
+                                            url: 'https://www.prisonlegalnews.org/news/2020/apr/1/all-50-states-report-prison-understaffing/'
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            persona: { name: 'Shift Sergeant', avatar: 'SS' },
+                            actions: [
+                                { text: 'Monitor Staffing', hasPain: false },
+                                { 
+                                    text: 'Coordinate Coverage', 
+                                    hasPain: true, 
+                                    painText: 'Officers skip breaks to maintain posts = fatigue & more OT',
+                                    painPosition: 'below',
+                                    costEstimate: '$250M',
+                                    costContext: 'Break coverage challenges lead to officer fatigue, increased errors, and cascading overtime needs. Approximately 10% of total overtime costs.',
+                                    citations: [
+                                        {
+                                            title: 'Rhode Island DOC Overtime Investigation',
+                                            excerpt: 'A correctional officer at the ACI was the top overtime earner in fiscal year 2024, making $301,196 in overtime alone, more than tripling his $86,000 salary. The DOC had a 13% vacancy rate prompting 407 examples of involuntary mandatory overtime in just two months.',
+                                            url: 'https://turnto10.com/i-team/on-your-dime/rhode-island-state-employees-clock-more-than-200000-dollars-overtime-staffing-shortages'
+                                        }
+                                    ]
+                                },
+                                { text: 'Handle Incidents', hasPain: false }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 'phase5',
+                    title: '📊 Phase 5: End-of-Shift Planning',
+                    time: '4:00 PM - 6:00 PM',
+                    estimatedCost: '$485M',
+                    flows: [
+                        {
+                            persona: { name: 'Day Shift Sergeant', avatar: 'DS' },
+                            actions: [
+                                { text: 'Review Next Roster', hasPain: false },
+                                { 
+                                    text: 'Check Evening Coverage', 
+                                    hasPain: true, 
+                                    painText: 'Evening shift gaps discovered late = mandatory OT holds',
+                                    painPosition: 'above',
+                                    costEstimate: '$310M',
+                                    costContext: 'Late discovery of evening shift vacancies leads to mandatory overtime holds for day shift officers. Approximately 12% of total overtime costs.',
+                                    citations: [
+                                        {
+                                            title: 'Maryland Corrections Staffing Crisis',
+                                            excerpt: 'Maryland\'s prisons are facing a staffing crisis with a shortage of about 1,000 officers, about 20% of positions. The state paid $129 million in overtime to prison guards in 2019 and expects to pay $150 million in overtime.',
+                                            url: 'https://www.prisonlegalnews.org/news/2020/apr/1/all-50-states-report-prison-understaffing/'
+                                        }
+                                    ]
+                                },
+                                { text: 'Coordinate Handoff', hasPain: false }
+                            ]
+                        },
+                        {
+                            persona: { name: 'Officers', avatar: 'CO' },
+                            actions: [
+                                { text: 'Complete Documentation', hasPain: false },
+                                { 
+                                    text: 'Prepare for End of Shift', 
+                                    hasPain: true, 
+                                    painText: 'Officers learn at 5 PM they must stay 4-8 more hours',
+                                    painPosition: 'below',
+                                    costEstimate: '$175M',
+                                    costContext: 'Last-minute mandatory overtime notifications are the leading cause of officer burnout and turnover, perpetuating the staffing crisis. Approximately 7% of total OT costs.',
+                                    citations: [
+                                        {
+                                            title: 'The Corrections Wellness Crisis Report',
+                                            excerpt: 'One state agency analysis found that the cost of replacing correctional officers due to turnover exceeded $16 million annually. When staffing levels stabilize, the need for expensive mandatory overtime decreases.',
+                                            url: 'https://www.benchmarkanalytics.com/blog/the-corrections-wellness-crisis-the-case-for-investing-in-officer-support-solutions/'
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 'phase6',
+                    title: '🌙 Phase 6: Evening Shift Change',
+                    time: '6:00 PM - 6:30 PM',
+                    estimatedCost: '$320M',
+                    flows: [
+                        {
+                            persona: { name: 'Day Shift Officers', avatar: 'DS' },
+                            actions: [
+                                { 
+                                    text: 'Final Handoff', 
+                                    hasPain: true, 
+                                    painText: 'Officers on hour 12-16 are exhausted & error-prone',
+                                    painPosition: 'above',
+                                    costEstimate: '$190M',
+                                    costContext: 'Officer fatigue after extended shifts leads to errors requiring additional supervisory overtime and incident response. Approximately 7-8% of total overtime costs.',
+                                    citations: [
+                                        {
+                                            title: 'DOJ Inspector General Report on BOP Staffing',
+                                            excerpt: 'The use of augmentation and mandatory overtime to compensate for staffing shortages overburdened employees and may have contributed to staff fatigue, sleep deprivation, decreased vigilance and inattentiveness to duty.',
+                                            url: 'https://www.shaheen.senate.gov/news/press/new-senators-shaheen-and-mccormick-introduce-bipartisan-bicameral-legislation-to-address-chronic-staffing-shortages-at-federal-prisons'
+                                        }
+                                    ]
+                                },
+                                { text: 'Turn In Equipment', hasPain: false }
+                            ]
+                        },
+                        {
+                            persona: { name: 'Evening Shift', avatar: 'ES' },
+                            actions: [
+                                { text: 'Arrive for Shift', hasPain: false },
+                                { text: 'Receive Briefing', hasPain: false },
+                                { 
+                                    text: 'Begin Posts', 
+                                    hasPain: true, 
+                                    painText: 'Evening shift chronically understaffed = immediate OT need',
+                                    painPosition: 'below',
+                                    costEstimate: '$130M',
+                                    costContext: 'Evening shifts historically have highest vacancy rates, requiring continuous overtime to maintain minimum staffing. Approximately 5% of total overtime costs.',
+                                    citations: [
+                                        {
+                                            title: 'Governing Magazine: Corrections Staffing Crisis',
+                                            excerpt: 'Nearly 34 percent of staff positions are vacant in North Carolina prisons. America\'s prisons may be succeeding at keeping incarcerated people inside, but they are increasingly also keeping out the people needed to run them effectively.',
+                                            url: 'https://www.governing.com/work/to-address-the-corrections-staffing-crisis-think-outside-the-cell'
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            metadata: {
+                totalEstimatedCost: '$2.5B+',
+                costBasis: 'National estimates based on 2023-2024 state corrections overtime data from multiple sources including Vera Institute, Marshall Project, Prison Policy Initiative, and state audit reports.',
+                lastUpdated: new Date().toISOString()
+            }
+        };
+
+        function init() {
+            setupEventListeners();
+            loadWorkflowData();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => toggleMode(btn.dataset.mode));
+            });
+
+            document.getElementById('saveChanges').addEventListener('click', saveWorkflowData);
+            document.getElementById('modalSave').addEventListener('click', saveModalEdit);
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMessage');
+
+            if (!username) {
+                errorMsg.textContent = '❌ Please enter your name';
+                errorMsg.classList.add('show');
+                return;
+            }
+
+            if (password === ACCESS_CODE) {
+                currentUser = username;
+                document.getElementById('currentUsername').textContent = username;
+                document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
+                
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appContainer').classList.add('active');
+                showNotification(`Welcome, ${username}!`, 'success');
+            } else {
+                errorMsg.textContent = '❌ Incorrect access code';
+                errorMsg.classList.add('show');
+                setTimeout(() => errorMsg.classList.remove('show'), 3000);
+            }
+        }
+
+        function handleLogout() {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('appContainer').classList.remove('active');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            currentUser = null;
+            isEditMode = false;
+        }
+
+        function loadWorkflowData() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                workflowData = saved ? JSON.parse(saved) : DEFAULT_DATA;
+            } catch (e) {
+                workflowData = DEFAULT_DATA;
+            }
+            renderWorkflow();
+        }
+
+        function saveWorkflowData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(workflowData));
+                showNotification('Changes saved!', 'success');
+            } catch (e) {
+                showNotification('Error saving changes', 'error');
+            }
+        }
+
+        function toggleMode(mode) {
+            isEditMode = (mode === 'edit');
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+
+            const mainContent = document.getElementById('mainContent');
+            mainContent.classList.toggle('view-mode', !isEditMode);
+            mainContent.classList.toggle('edit-mode', isEditMode);
+
+            document.getElementById('saveChanges').style.display = isEditMode ? 'block' : 'none';
+        }
+
+        function renderWorkflow() {
+            const container = document.getElementById('phasesContainer');
+            container.innerHTML = '';
+
+            renderChevronNav();
+
+            workflowData.phases.forEach((phase, phaseIndex) => {
+                const phaseEl = createPhaseElement(phase, phaseIndex);
+                container.appendChild(phaseEl);
+            });
+
+            updateActiveChevronOnScroll();
+        }
+
+        function renderChevronNav() {
+            const chevronNav = document.getElementById('chevronNav');
+            chevronNav.innerHTML = '';
+
+            workflowData.phases.forEach((phase, index) => {
+                const chevron = document.createElement('button');
+                chevron.className = 'chevron-item';
+                chevron.setAttribute('data-phase', index);
+                chevron.setAttribute('data-tooltip', phase.title);
+                
+                const titleParts = phase.title.match(/Phase (\d+):?\s*(.+)/);
+                const phaseNum = titleParts ? titleParts[1] : (index + 1);
+                const phaseName = titleParts ? titleParts[2].replace(/^📋|📢|🔄|⚡|📊|🌙\s*/, '') : phase.title;
+                
+                chevron.innerHTML = `
+                    <span class="chevron-number">Phase ${phaseNum}</span>
+                    <span class="chevron-label">${phaseName.length > 15 ? phaseName.substring(0, 15) + '...' : phaseName}</span>
+                    <span class="chevron-cost">${phase.estimatedCost}</span>
+                `;
+                
+                chevron.addEventListener('click', () => scrollToPhase(index));
+                chevronNav.appendChild(chevron);
+            });
+
+            if (chevronNav.firstChild) {
+                chevronNav.firstChild.classList.add('active');
+            }
+        }
+
+        function scrollToPhase(phaseIndex) {
+            const phaseSections = document.querySelectorAll('.phase-section');
+            if (phaseSections[phaseIndex]) {
+                phaseSections[phaseIndex].scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                updateActiveChevron(phaseIndex);
+            }
+        }
+
+        function updateActiveChevron(activeIndex) {
+            const chevrons = document.querySelectorAll('.chevron-item');
+            chevrons.forEach((chevron, index) => {
+                chevron.classList.toggle('active', index === activeIndex);
+            });
+        }
+
+        function updateActiveChevronOnScroll() {
+            const phaseSections = document.querySelectorAll('.phase-section');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
+                        const phaseIndex = Array.from(phaseSections).indexOf(entry.target);
+                        updateActiveChevron(phaseIndex);
+                    }
+                });
+            }, {
+                threshold: [0.3],
+                rootMargin: '-100px 0px -50% 0px'
+            });
+
+            phaseSections.forEach(section => observer.observe(section));
+        }
+
+        function createPhaseElement(phase, phaseIndex) {
+            const section = document.createElement('div');
+            section.className = 'phase-section';
+            section.id = `phase-${phaseIndex}`;
+            
+            let flowsHTML = '';
+            phase.flows.forEach((flow, flowIndex) => {
+                const actionsHTML = flow.actions.map((actionObj, actionIndex) => {
+                    const isLast = actionIndex === flow.actions.length - 1;
+                    
+                    let painHTML = '';
+                    if (actionObj.hasPain) {
+                        painHTML = `
+                            <div class="pain-callout ${actionObj.painPosition}" 
+                                 onclick="openDrawer(${phaseIndex}, ${flowIndex}, ${actionIndex})">
+                                ${actionObj.painText}
+                                <span class="pain-cost">${actionObj.costEstimate} / year</span>
+                                <span class="info-icon">ℹ</span>
+                                <button class="delete-btn" onclick="event.stopPropagation(); deletePainPoint(${phaseIndex}, ${flowIndex}, ${actionIndex})">✕</button>
+                            </div>
+                        `;
+                    }
+
+                    return `
+                        <div class="action-with-pain">
+                            ${actionObj.painPosition === 'above' && actionObj.hasPain ? painHTML : ''}
+                            ${!actionObj.hasPain ? `
+                                <button class="add-btn-inline" 
+                                        onclick="addPainPoint(${phaseIndex}, ${flowIndex}, ${actionIndex}, 'above')"
+                                        style="margin-bottom: 10px;">
+                                    + Pain Point
+                                </button>
+                            ` : ''}
+                            <div class="action-box" onclick="editAction(${phaseIndex}, ${flowIndex}, ${actionIndex})">
+                                ${actionObj.text}
+                                <button class="delete-btn" onclick="event.stopPropagation(); deleteAction(${phaseIndex}, ${flowIndex}, ${actionIndex})">✕</button>
+                            </div>
+                            ${actionObj.painPosition === 'below' && actionObj.hasPain ? painHTML : ''}
+                            ${!actionObj.hasPain ? `
+                                <button class="add-btn-inline" 
+                                        onclick="addPainPoint(${phaseIndex}, ${flowIndex}, ${actionIndex}, 'below')"
+                                        style="margin-top: 10px;">
+                                    + Pain Point
+                                </button>
+                            ` : ''}
+                        </div>
+                        ${!isLast ? '<span class="flow-arrow">→</span>' : ''}
+                    `;
+                }).join('');
+
+                flowsHTML += `
+                    <div class="swimlane">
+                        <div class="persona-label">
+                            <div class="persona-avatar-small">${flow.persona.avatar}</div>
+                            <div class="persona-name">${flow.persona.name}</div>
+                            <button class="delete-btn" onclick="deletePersona(${phaseIndex}, ${flowIndex})">✕</button>
+                        </div>
+                        <div class="flow-content">
+                            <div class="action-flow-row">
+                                ${actionsHTML}
+                                <button class="add-btn-inline" onclick="addAction(${phaseIndex}, ${flowIndex})">
+                                    + Action
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            section.innerHTML = `
+                <div class="phase-header">
+                    <div class="phase-title">${phase.title}</div>
+                    <div class="phase-time">${phase.time}</div>
+                    <div class="phase-cost">💰 Estimated OT Cost: ${phase.estimatedCost}/year</div>
+                </div>
+                <div class="flow-diagram">
+                    ${flowsHTML}
+                    <button class="add-flow-btn" onclick="addPersona(${phaseIndex})">
+                        ➕ Add Person/Role
+                    </button>
+                </div>
+            `;
+            
+            return section;
+        }
+
+        function openDrawer(phaseIndex, flowIndex, actionIndex) {
+            const action = workflowData.phases[phaseIndex].flows[flowIndex].actions[actionIndex];
+            
+            if (!action.hasPain) return;
+
+            const drawerContent = document.getElementById('drawerContent');
+            
+            let citationsHTML = '';
+            if (action.citations && action.citations.length > 0) {
+                citationsHTML = action.citations.map(citation => `
+                    <div class="citation-source">
+                        <div class="source-title">${citation.title}</div>
+                        <div class="source-excerpt">"${citation.excerpt}"</div>
+                        <a href="${citation.url}" target="_blank" class="source-link">
+                            Read Full Source →
+                        </a>
+                    </div>
+                `).join('');
+            }
+
+            drawerContent.innerHTML = `
+                <div class="drawer-section">
+                    <h4>Pain Point</h4>
+                    <p><strong>${action.painText}</strong></p>
+                </div>
+
+                <div class="drawer-section">
+                    <h4>Cost Analysis</h4>
+                    <div class="cost-breakdown">
+                        <div class="cost-item">
+                            <span class="label">Estimated Annual OT Cost:</span>
+                            <span class="value">${action.costEstimate}</span>
+                        </div>
+                        <div class="cost-item">
+                            <span class="label">% of Total Nat'l OT:</span>
+                            <span class="value">${calculatePercentage(action.costEstimate)}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="drawer-section">
+                    <h4>Context</h4>
+                    <p>${action.costContext}</p>
+                </div>
+
+                <div class="drawer-section">
+                    <h4>Research Sources</h4>
+                    ${citationsHTML}
+                </div>
+            `;
+
+            document.getElementById('citationDrawer').classList.add('open');
+            document.getElementById('drawerOverlay').classList.add('active');
+        }
+
+        function closeDrawer() {
+            document.getElementById('citationDrawer').classList.remove('open');
+            document.getElementById('drawerOverlay').classList.remove('active');
+        }
+
+        function calculatePercentage(costEstimate) {
+            // Extract number from cost estimate (e.g., "$420M" -> 420)
+            const value = parseFloat(costEstimate.replace(/[$M]/g, ''));
+            // Total is $2.5B = 2500M
+            return ((value / 2500) * 100).toFixed(1);
+        }
+
+        function editAction(phaseIndex, flowIndex, actionIndex) {
+            if (!isEditMode) return;
+            
+            currentEditItem = { type: 'action', phaseIndex, flowIndex, actionIndex };
+            const action = workflowData.phases[phaseIndex].flows[flowIndex].actions[actionIndex];
+            
+            document.getElementById('modalTitle').textContent = 'Edit Action';
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="form-group">
+                    <label>Action Description</label>
+                    <input type="text" id="modalInput" value="${action.text}">
+                </div>
+            `;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function deleteAction(phaseIndex, flowIndex, actionIndex) {
+            if (!isEditMode) return;
+            if (!confirm('Delete this action?')) return;
+            
+            workflowData.phases[phaseIndex].flows[flowIndex].actions.splice(actionIndex, 1);
+            renderWorkflow();
+            showNotification('Action deleted', 'success');
+        }
+
+        function addAction(phaseIndex, flowIndex) {
+            if (!isEditMode) return;
+            
+            currentEditItem = { type: 'newAction', phaseIndex, flowIndex };
+            document.getElementById('modalTitle').textContent = 'Add Action';
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="form-group">
+                    <label>Action Description</label>
+                    <input type="text" id="modalInput" value="">
+                </div>
+            `;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function deletePainPoint(phaseIndex, flowIndex, actionIndex) {
+            if (!isEditMode) return;
+            if (!confirm('Delete this pain point?')) return;
+            
+            const action = workflowData.phases[phaseIndex].flows[flowIndex].actions[actionIndex];
+            action.hasPain = false;
+            action.painText = '';
+            action.painPosition = '';
+            action.costEstimate = '';
+            action.costContext = '';
+            action.citations = [];
+            
+            renderWorkflow();
+            showNotification('Pain point deleted', 'success');
+        }
+
+        function addPainPoint(phaseIndex, flowIndex, actionIndex, position) {
+            if (!isEditMode) return;
+            
+            currentEditItem = { type: 'newPain', phaseIndex, flowIndex, actionIndex, position };
+            document.getElementById('modalTitle').textContent = 'Add Pain Point';
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="form-group">
+                    <label>Pain Point Description</label>
+                    <textarea id="painText" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Cost Estimate (e.g., $100M)</label>
+                    <input type="text" id="costEstimate" value="$0M">
+                </div>
+                <div class="form-group">
+                    <label>Cost Context</label>
+                    <textarea id="costContext" rows="4"></textarea>
+                </div>
+            `;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function deletePersona(phaseIndex, flowIndex) {
+            if (!isEditMode) return;
+            if (!confirm('Delete this person/role and all their actions?')) return;
+            
+            workflowData.phases[phaseIndex].flows.splice(flowIndex, 1);
+            renderWorkflow();
+            showNotification('Person/role deleted', 'success');
+        }
+
+        function addPersona(phaseIndex) {
+            if (!isEditMode) return;
+            
+            currentEditItem = { type: 'newPersona', phaseIndex };
+            document.getElementById('modalTitle').textContent = 'Add Person/Role';
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="form-group">
+                    <label>Person/Role Name</label>
+                    <input type="text" id="modalInput" value="">
+                </div>
+            `;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function saveModalEdit() {
+            const { type, phaseIndex, flowIndex, actionIndex, position } = currentEditItem;
+
+            if (type === 'action') {
+                const value = document.getElementById('modalInput').value.trim();
+                if (!value) return;
+                const action = workflowData.phases[phaseIndex].flows[flowIndex].actions[actionIndex];
+                action.text = value;
+            } 
+            else if (type === 'newAction') {
+                const value = document.getElementById('modalInput').value.trim();
+                if (!value) return;
+                workflowData.phases[phaseIndex].flows[flowIndex].actions.push({
+                    text: value,
+                    hasPain: false
+                });
+            }
+            else if (type === 'newPain') {
+                const painText = document.getElementById('painText').value.trim();
+                const costEstimate = document.getElementById('costEstimate').value.trim();
+                const costContext = document.getElementById('costContext').value.trim();
+                
+                if (!painText) return;
+                
+                const action = workflowData.phases[phaseIndex].flows[flowIndex].actions[actionIndex];
+                action.painText = painText;
+                action.hasPain = true;
+                action.painPosition = position;
+                action.costEstimate = costEstimate || '$0M';
+                action.costContext = costContext || 'No context provided.';
+                action.citations = [];
+            }
+            else if (type === 'newPersona') {
+                const value = document.getElementById('modalInput').value.trim();
+                if (!value) return;
+                const initials = value.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                workflowData.phases[phaseIndex].flows.push({
+                    persona: { name: value, avatar: initials },
+                    actions: [
+                        { text: 'New Action', hasPain: false }
+                    ]
+                });
+            }
+
+            closeModal();
+            renderWorkflow();
+            showNotification('Changes applied', 'success');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+            currentEditItem = null;
+        }
+
+        function showCostBreakdown() {
+            // Aggregate costs by category
+            const categories = {
+                'Emergency Response & Staffing Gaps': {
+                    cost: 600,
+                    description: 'Last-minute call-outs, delayed responses, and inability to contact on-call officers requiring immediate overtime coverage.',
+                    painPoints: ['Last-minute call-outs ($420M)', 'Officers don\'t answer phones ($180M)']
+                },
+                'Inadequate Shift Operations': {
+                    cost: 565,
+                    description: 'Rushed briefings, inadequate handoffs, and officers working unfamiliar posts requiring additional supervisory support.',
+                    painPoints: ['Short-staffed briefings ($150M)', 'Unfamiliar post assignments ($140M)', 'Rushed handoffs ($200M)', 'Facility lockdowns due to count errors ($180M)', 'Fatigue-related errors ($190M)']
+                },
+                'Minimum Staffing & No Buffer': {
+                    cost: 625,
+                    description: 'Operating at minimum staffing means any incident or unexpected event immediately requires overtime coverage.',
+                    painPoints: ['No spare capacity ($375M)', 'Break coverage issues ($250M)']
+                },
+                'Poor Scheduling & Planning': {
+                    cost: 485,
+                    description: 'Late discovery of staffing gaps and last-minute mandatory overtime notifications perpetuate the staffing crisis.',
+                    painPoints: ['Late discovery of evening gaps ($310M)', 'Last-minute OT notifications ($175M)']
+                },
+                'Chronic Evening Shift Understaffing': {
+                    cost: 130,
+                    description: 'Evening shifts have historically higher vacancy rates requiring continuous overtime to maintain operations.',
+                    painPoints: ['Evening shift vacancies ($130M)']
+                }
+            };
+
+            const total = Object.values(categories).reduce((sum, cat) => sum + cat.cost, 0);
+
+            const breakdownContent = document.getElementById('breakdownContent');
+            
+            let categoryHTML = '';
+            Object.entries(categories).forEach(([name, data]) => {
+                const percentage = ((data.cost / total) * 100).toFixed(1);
+                const barWidth = percentage;
+                
+                categoryHTML += `
+                    <div class="breakdown-item">
+                        <div class="breakdown-header">
+                            <span class="breakdown-category">${name}</span>
+                            <span class="breakdown-value">$${data.cost}M</span>
+                        </div>
+                        <div class="breakdown-bar" style="width: ${barWidth}%">
+                            <span class="breakdown-percentage">${percentage}%</span>
+                        </div>
+                        <div class="breakdown-description">${data.description}</div>
+                        <div style="margin-top: 10px; font-size: 13px; color: var(--text-light);">
+                            <strong>Includes:</strong> ${data.painPoints.join(', ')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            breakdownContent.innerHTML = `
+                <div class="summary-box">
+                    <h3>Total Estimated Annual Overtime Cost</h3>
+                    <div class="big-number">$${(total / 1000).toFixed(1)}B</div>
+                    <div class="subtitle">Based on aggregated state-level data and national corrections personnel costs</div>
+                </div>
+
+                <h3 style="margin-bottom: 20px; color: var(--primary-blue);">Key Cost Drivers</h3>
+                ${categoryHTML}
+
+                <div style="margin-top: 30px; padding: 20px; background: var(--light-blue); border-radius: 12px; border-left: 4px solid var(--primary-blue);">
+                    <h4 style="color: var(--primary-blue); margin-bottom: 10px;">Methodology</h4>
+                    <p style="font-size: 14px; line-height: 1.6; color: var(--text-dark);">
+                        Cost estimates are derived from reported overtime expenditures in multiple states including 
+                        Illinois ($95.5M), Connecticut ($110.8M), Nebraska ($22M), Maryland ($150M), New York (significant 
+                        portion of $1.3B state OT), California ($340M in 2015), and Georgia ($4M+). These figures were 
+                        extrapolated nationally based on total correctional employment (~432,000 officers nationwide) and 
+                        personnel costs representing 68% of total prison spending (~$43B). Pain point allocations are based 
+                        on root cause analysis from correctional research literature, DOJ Inspector General reports, and 
+                        corrections officer testimony.
+                    </p>
+                </div>
+            `;
+
+            document.getElementById('breakdownModal').classList.add('active');
+        }
+
+        function closeBreakdownModal() {
+            document.getElementById('breakdownModal').classList.remove('active');
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <span>${type === 'success' ? '✓' : '✕'}</span>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
