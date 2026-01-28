@@ -1274,9 +1274,6 @@
                         <span id="statusIcon">🔄</span>
                         <span id="statusText">Connecting...</span>
                     </div>
-                    <button class="btn btn-secondary" onclick="showDebugInfo()" style="font-size: 12px; padding: 8px 16px;">
-                        🔧 Debug
-                    </button>
                     <div class="mode-toggle">
                         <button class="mode-btn active" data-mode="view">👁 View</button>
                         <button class="mode-btn" data-mode="edit">✏️ Edit</button>
@@ -2208,7 +2205,7 @@
                             <div class="pain-callout ${actionObj.painPosition}" 
                                  onclick="openDrawer(${phaseIndex}, ${flowIndex}, ${actionIndex})">
                                 ${actionObj.painText}
-                                <span class="pain-cost">${actionObj.costEstimate} / year</span>
+                                <span class="pain-cost">${actionObj.actualCost || actionObj.costEstimate} / year</span>
                                 <span class="info-icon">ℹ</span>
                                 <button class="delete-btn" onclick="event.stopPropagation(); deletePainPoint(${phaseIndex}, ${flowIndex}, ${actionIndex})">✕</button>
                             </div>
