@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Correctional Shift Management - Cost Analysis</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -139,6 +145,37 @@
 
         .app-container.active {
             display: block;
+        }
+
+        /* Page Views */
+        .page-view {
+            display: none;
+        }
+
+        .page-view.active {
+            display: block;
+        }
+
+        .back-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            color: var(--primary-blue);
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .back-nav:hover {
+            gap: 15px;
+            color: var(--dark-blue);
+        }
+
+        .back-nav::before {
+            content: '←';
+            font-size: 24px;
         }
 
         /* Top Bar */
@@ -1223,52 +1260,90 @@
 
     <!-- Main App -->
     <div class="app-container" id="appContainer">
-        <div class="top-bar">
-            <div>
-                <h1>📊 Correctional Shift Management</h1>
-                <div class="top-bar-subtitle">National Overtime Cost Analysis</div>
-                <div class="cost-badge" onclick="showCostBreakdown()">💰 Est. $2.5B+ Annual OT Cost</div>
+        <!-- Workflow View -->
+        <div class="page-view active" id="workflowView">
+            <div class="top-bar">
+                <div>
+                    <h1>📊 Correctional Shift Management</h1>
+                    <div class="top-bar-subtitle">National Overtime Cost Analysis</div>
+                    <div style="display: flex; gap: 15px; align-items: center; margin-top: 8px; flex-wrap: wrap;">
+                        <button class="cost-badge" onclick="showCostBreakdown('research')" id="researchBadge" title="Click to view research-based cost breakdown">
+                            💰 Research: $2.5B+/year
+                        </button>
+                        <button class="cost-badge" onclick="showCostBreakdown('actual')" id="actualBadge" style="background: linear-gradient(135deg, #059669, #047857);" title="Click to view your actual cost breakdown">
+                            💵 Your Actual: <span id="actualTotal">Enter data</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="top-bar-actions">
+                    <div id="connectionStatus" style="display: none; padding: 8px 16px; background: var(--bg-gray); border-radius: 8px; font-size: 13px; font-weight: 600;">
+                        <span id="statusIcon">🔄</span>
+                        <span id="statusText">Connecting...</span>
+                    </div>
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" data-mode="view">👁 View</button>
+                        <button class="mode-btn" data-mode="edit">✏️ Edit</button>
+                    </div>
+                    <button class="btn btn-success" id="saveChanges" style="display: none;">
+                        💾 Save Changes
+                    </button>
+                    <div class="user-info">
+                        <div class="user-avatar" id="userAvatar">A</div>
+                        <span id="currentUsername">User</span>
+                    </div>
+                    <button class="btn btn-secondary" id="logoutBtn">Logout</button>
+                </div>
             </div>
-            <div class="top-bar-actions">
-                <div class="mode-toggle">
-                    <button class="mode-btn active" data-mode="view">👁 View</button>
-                    <button class="mode-btn" data-mode="edit">✏️ Edit</button>
+
+            <div class="main-content view-mode" id="mainContent">
+                <!-- Phase Navigation -->
+                <div class="phase-nav">
+                    <div class="phase-nav-title">📍 Navigate to Phase</div>
+                    <div class="chevron-container" id="chevronNav"></div>
                 </div>
-                <button class="btn btn-success" id="saveChanges" style="display: none;">
-                    💾 Save Changes
-                </button>
-                <div class="user-info">
-                    <div class="user-avatar" id="userAvatar">A</div>
-                    <span id="currentUsername">User</span>
+
+                <!-- Legend -->
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-icon person">👤</div>
+                        <span>Person/Role</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon action">→</div>
+                        <span>Action Flow</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon pain">💰</div>
+                        <span>Pain Point with Cost</span>
+                    </div>
                 </div>
-                <button class="btn btn-secondary" id="logoutBtn">Logout</button>
+
+                <div id="phasesContainer"></div>
             </div>
         </div>
 
-        <div class="main-content view-mode" id="mainContent">
-            <!-- Phase Navigation -->
-            <div class="phase-nav">
-                <div class="phase-nav-title">📍 Navigate to Phase</div>
-                <div class="chevron-container" id="chevronNav"></div>
-            </div>
-
-            <!-- Legend -->
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-icon person">👤</div>
-                    <span>Person/Role</span>
+        <!-- Cost Breakdown View -->
+        <div class="page-view" id="breakdownView">
+            <div class="top-bar">
+                <div>
+                    <h1>💰 National OT Cost Breakdown</h1>
+                    <div class="top-bar-subtitle">Operational Hypothesis Analysis</div>
                 </div>
-                <div class="legend-item">
-                    <div class="legend-icon action">→</div>
-                    <span>Action Flow</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-icon pain">💰</div>
-                    <span>Pain Point with Cost</span>
+                <div class="top-bar-actions">
+                    <div class="user-info">
+                        <div class="user-avatar" id="userAvatar2">A</div>
+                        <span id="currentUsername2">User</span>
+                    </div>
+                    <button class="btn btn-secondary" id="logoutBtn2">Logout</button>
                 </div>
             </div>
 
-            <div id="phasesContainer"></div>
+            <div class="main-content">
+                <div class="back-nav" onclick="showWorkflowView()">
+                    Back to Workflow View
+                </div>
+                <div id="breakdownContent"></div>
+            </div>
         </div>
     </div>
 
@@ -1303,25 +1378,47 @@
         </div>
     </div>
 
-    <!-- Cost Breakdown Modal -->
-    <div class="modal" id="breakdownModal">
-        <div class="modal-content large">
-            <div class="modal-header">
-                <h2>National Correctional Overtime Cost Breakdown</h2>
-                <button class="close-modal" onclick="closeBreakdownModal()">✕</button>
-            </div>
-            <div class="modal-body" id="breakdownContent">
-                <!-- Content will be dynamically populated -->
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeBreakdownModal()">Close</button>
-            </div>
-        </div>
-    </div>
-
     <script>
+        // ============================================
+        // FIREBASE CONFIGURATION
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCqlGHUyXqiwKba8bZeUxuDsz8BG0v9kD8",
+            authDomain: "workflow-editor-6bb0b.firebaseapp.com",
+            projectId: "workflow-editor-6bb0b",
+            storageBucket: "workflow-editor-6bb0b.firebasestorage.app",
+            messagingSenderId: "363265686774",
+            appId: "1:363265686774:web:9ebfa14d2b6dab004300d7"
+        };
+
+        // Initialize Firebase
+        let db = null;
+        let isFirebaseEnabled = false;
+        
+        try {
+            // Check if Firebase config is set up (not default values)
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                isFirebaseEnabled = true;
+                console.log("✅ Firebase enabled - Multi-user mode active");
+                setTimeout(() => updateConnectionStatus('connected'), 1000);
+            } else {
+                console.log("⚠️ Firebase not configured - Using local storage (single-user mode)");
+                setTimeout(() => updateConnectionStatus('local'), 1000);
+            }
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            console.log("⚠️ Falling back to local storage");
+            setTimeout(() => updateConnectionStatus('local'), 1000);
+        }
+
+        // ============================================
+        // APPLICATION CODE
+        // ============================================
         const ACCESS_CODE = 'workflow2026';
         const STORAGE_KEY = 'workflow-cost-data';
+        const FIREBASE_DOC_ID = 'workflow-main'; // Single shared document for all users
         
         let workflowData = null;
         let isEditMode = false;
@@ -1347,6 +1444,7 @@
                                     painText: 'Last-minute call-outs require emergency OT within 30-60 min',
                                     painPosition: 'above',
                                     costEstimate: '$420M',
+                                    actualCost: null,
                                     costContext: 'Emergency call-out response accounts for approximately 17% of total correctional overtime costs nationwide. Based on data from multiple states, facilities average 3-5 emergency call-outs per week requiring immediate overtime coverage.',
                                     citations: [
                                         {
@@ -1660,6 +1758,35 @@
             }
         };
 
+        function updateConnectionStatus(status) {
+            const statusDiv = document.getElementById('connectionStatus');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusText = document.getElementById('statusText');
+            
+            if (!statusDiv) return;
+            
+            statusDiv.style.display = 'flex';
+            statusDiv.style.alignItems = 'center';
+            statusDiv.style.gap = '8px';
+            
+            if (status === 'connected') {
+                statusIcon.textContent = '🌐';
+                statusText.textContent = 'Multi-User Mode';
+                statusDiv.style.color = 'var(--success-green)';
+                statusDiv.style.background = '#D1FAE5';
+            } else if (status === 'local') {
+                statusIcon.textContent = '💾';
+                statusText.textContent = 'Local Mode';
+                statusDiv.style.color = 'var(--text-medium)';
+                statusDiv.style.background = 'var(--bg-gray)';
+            } else {
+                statusIcon.textContent = '⚠️';
+                statusText.textContent = 'Connection Issue';
+                statusDiv.style.color = '#DC2626';
+                statusDiv.style.background = '#FEE2E2';
+            }
+        }
+
         function init() {
             setupEventListeners();
             loadWorkflowData();
@@ -1668,6 +1795,7 @@
         function setupEventListeners() {
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
             document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            document.getElementById('logoutBtn2').addEventListener('click', handleLogout);
             
             document.querySelectorAll('.mode-btn').forEach(btn => {
                 btn.addEventListener('click', () => toggleMode(btn.dataset.mode));
@@ -1691,8 +1819,11 @@
 
             if (password === ACCESS_CODE) {
                 currentUser = username;
+                const initial = username.charAt(0).toUpperCase();
                 document.getElementById('currentUsername').textContent = username;
-                document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
+                document.getElementById('currentUsername2').textContent = username;
+                document.getElementById('userAvatar').textContent = initial;
+                document.getElementById('userAvatar2').textContent = initial;
                 
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContainer').classList.add('active');
@@ -1714,6 +1845,54 @@
         }
 
         function loadWorkflowData() {
+            if (isFirebaseEnabled) {
+                loadFromFirebase();
+            } else {
+                loadFromLocalStorage();
+            }
+        }
+
+        async function loadFromFirebase() {
+            try {
+                showNotification('Loading shared data...', 'success');
+                const docRef = db.collection('workflows').doc(FIREBASE_DOC_ID);
+                const doc = await docRef.get();
+                
+                if (doc.exists) {
+                    workflowData = doc.data().workflow;
+                    console.log('✅ Loaded data from Firebase');
+                } else {
+                    // First time - initialize with default data
+                    workflowData = DEFAULT_DATA;
+                    await saveToFirebase();
+                    console.log('✅ Initialized Firebase with default data');
+                }
+                
+                renderWorkflow();
+                updateActualCostTotal();
+                
+                // Set up real-time listener for changes from other users
+                docRef.onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const newData = doc.data().workflow;
+                        // Only update if data actually changed and it's not our own save
+                        if (JSON.stringify(newData) !== JSON.stringify(workflowData)) {
+                            workflowData = newData;
+                            renderWorkflow();
+                            updateActualCostTotal();
+                            showNotification('Data updated by another user', 'success');
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Firebase load error:', error);
+                showNotification('Error loading shared data, using local backup', 'error');
+                loadFromLocalStorage();
+            }
+        }
+
+        function loadFromLocalStorage() {
             try {
                 const saved = localStorage.getItem(STORAGE_KEY);
                 workflowData = saved ? JSON.parse(saved) : DEFAULT_DATA;
@@ -1721,12 +1900,44 @@
                 workflowData = DEFAULT_DATA;
             }
             renderWorkflow();
+            updateActualCostTotal();
         }
 
         function saveWorkflowData() {
+            if (isFirebaseEnabled) {
+                saveToFirebase();
+            } else {
+                saveToLocalStorage();
+            }
+        }
+
+        async function saveToFirebase() {
+            try {
+                const docRef = db.collection('workflows').doc(FIREBASE_DOC_ID);
+                await docRef.set({
+                    workflow: workflowData,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastUpdatedBy: currentUser || 'Unknown'
+                });
+                
+                // Also save to localStorage as backup
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(workflowData));
+                
+                updateActualCostTotal();
+                showNotification('Changes saved and synced to all users!', 'success');
+                console.log('✅ Saved to Firebase');
+            } catch (error) {
+                console.error('Firebase save error:', error);
+                showNotification('Error syncing to cloud, saved locally only', 'error');
+                saveToLocalStorage();
+            }
+        }
+
+        function saveToLocalStorage() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(workflowData));
-                showNotification('Changes saved!', 'success');
+                updateActualCostTotal();
+                showNotification('Changes saved locally!', 'success');
             } catch (e) {
                 showNotification('Error saving changes', 'error');
             }
@@ -1746,6 +1957,20 @@
             document.getElementById('saveChanges').style.display = isEditMode ? 'block' : 'none';
         }
 
+        function updateActualCostTotal() {
+            const actualCosts = calculateActualCostsByCategory();
+            const total = Object.values(actualCosts.totals).reduce((sum, val) => sum + val, 0);
+            
+            const badge = document.getElementById('actualTotal');
+            if (total === 0) {
+                badge.textContent = 'Enter data';
+                badge.parentElement.style.opacity = '0.7';
+            } else {
+                badge.textContent = formatCost(total);
+                badge.parentElement.style.opacity = '1';
+            }
+        }
+
         function renderWorkflow() {
             const container = document.getElementById('phasesContainer');
             container.innerHTML = '';
@@ -1758,6 +1983,7 @@
             });
 
             updateActiveChevronOnScroll();
+            updateActualCostTotal();
         }
 
         function renderChevronNav() {
@@ -1792,12 +2018,13 @@
         function scrollToPhase(phaseIndex) {
             const phaseSections = document.querySelectorAll('.phase-section');
             if (phaseSections[phaseIndex]) {
+                // Update active chevron immediately on click
+                updateActiveChevron(phaseIndex);
+                
                 phaseSections[phaseIndex].scrollIntoView({ 
                     behavior: 'smooth',
                     block: 'start'
                 });
-                
-                updateActiveChevron(phaseIndex);
             }
         }
 
@@ -1917,6 +2144,11 @@
             
             if (!action.hasPain) return;
 
+            // Initialize actualCost if not present
+            if (action.actualCost === undefined) {
+                action.actualCost = null;
+            }
+
             const drawerContent = document.getElementById('drawerContent');
             
             let citationsHTML = '';
@@ -1932,6 +2164,16 @@
                 `).join('');
             }
 
+            const actualCostDisplay = action.actualCost 
+                ? `<span class="value">${action.actualCost}</span>`
+                : `<span class="value" style="color: var(--text-light); font-style: italic;">Not entered</span>`;
+
+            const editButton = isEditMode 
+                ? `<button class="btn btn-secondary" onclick="editActualCost(${phaseIndex}, ${flowIndex}, ${actionIndex})" style="margin-top: 15px; width: 100%;">
+                    ✏️ Enter Actual Cost Data
+                   </button>`
+                : '';
+
             drawerContent.innerHTML = `
                 <div class="drawer-section">
                     <h4>Pain Point</h4>
@@ -1942,14 +2184,19 @@
                     <h4>Cost Analysis</h4>
                     <div class="cost-breakdown">
                         <div class="cost-item">
-                            <span class="label">Estimated Annual OT Cost:</span>
+                            <span class="label">Research Estimate (National):</span>
                             <span class="value">${action.costEstimate}</span>
+                        </div>
+                        <div class="cost-item">
+                            <span class="label">Your Actual Cost:</span>
+                            ${actualCostDisplay}
                         </div>
                         <div class="cost-item">
                             <span class="label">% of Total Nat'l OT:</span>
                             <span class="value">${calculatePercentage(action.costEstimate)}%</span>
                         </div>
                     </div>
+                    ${editButton}
                 </div>
 
                 <div class="drawer-section">
@@ -1970,6 +2217,33 @@
         function closeDrawer() {
             document.getElementById('citationDrawer').classList.remove('open');
             document.getElementById('drawerOverlay').classList.remove('active');
+        }
+
+        function editActualCost(phaseIndex, flowIndex, actionIndex) {
+            const action = workflowData.phases[phaseIndex].flows[flowIndex].actions[actionIndex];
+            
+            currentEditItem = { type: 'actualCost', phaseIndex, flowIndex, actionIndex };
+            document.getElementById('modalTitle').textContent = 'Enter Actual Cost Data';
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="form-group">
+                    <label>Your Actual Annual Cost</label>
+                    <input type="text" id="actualCostInput" value="${action.actualCost || ''}" placeholder="e.g., $50000 or $50K">
+                    <p style="font-size: 12px; color: var(--text-medium); margin-top: 8px;">
+                        Enter the actual cost you've calculated for this pain point at your facility/system.
+                        Format: $X or $XK or $XM
+                    </p>
+                </div>
+                <div style="background: var(--light-blue); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <div style="font-size: 13px; font-weight: 700; color: var(--primary-blue); margin-bottom: 8px;">
+                        💡 Research Estimate: ${action.costEstimate} (National)
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-medium); line-height: 1.5;">
+                        ${action.painText}
+                    </div>
+                </div>
+            `;
+            document.getElementById('editModal').classList.add('active');
         }
 
         function calculatePercentage(costEstimate) {
@@ -2047,15 +2321,48 @@
                     <label>Pain Point Description</label>
                     <textarea id="painText" rows="3"></textarea>
                 </div>
+                
                 <div class="form-group">
-                    <label>Cost Estimate (e.g., $100M)</label>
-                    <input type="text" id="costEstimate" value="$0M">
+                    <label>Cost Type</label>
+                    <select id="costType" style="width: 100%; padding: 14px; border: 2px solid var(--border-gray); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; margin-bottom: 15px;">
+                        <option value="">Select cost type...</option>
+                        <option value="estimate">Research Estimate (National extrapolation)</option>
+                        <option value="actual">Your Actual Cost (Facility/system data)</option>
+                    </select>
+                    <p style="font-size: 12px; color: var(--text-medium); margin-top: 8px;">
+                        <strong>Research Estimate:</strong> Use when entering a cost based on national research/extrapolation<br>
+                        <strong>Your Actual:</strong> Use when entering your facility's real calculated cost
+                    </p>
                 </div>
+                
+                <div class="form-group" id="costInputGroup" style="display: none;">
+                    <label id="costLabel">Cost Amount</label>
+                    <input type="text" id="costAmount" placeholder="e.g., $50000 or $50K or $50M">
+                </div>
+                
                 <div class="form-group">
-                    <label>Cost Context</label>
-                    <textarea id="costContext" rows="4"></textarea>
+                    <label>Cost Context / Notes</label>
+                    <textarea id="costContext" rows="4" placeholder="Describe why this pain point drives overtime costs..."></textarea>
                 </div>
             `;
+            
+            // Show/hide and update cost input based on selection
+            document.getElementById('costType').addEventListener('change', function() {
+                const costInputGroup = document.getElementById('costInputGroup');
+                const costLabel = document.getElementById('costLabel');
+                
+                if (this.value) {
+                    costInputGroup.style.display = 'block';
+                    if (this.value === 'estimate') {
+                        costLabel.textContent = 'Research Estimate (National)';
+                    } else {
+                        costLabel.textContent = 'Your Actual Cost';
+                    }
+                } else {
+                    costInputGroup.style.display = 'none';
+                }
+            });
+            
             document.getElementById('editModal').classList.add('active');
         }
 
@@ -2102,18 +2409,49 @@
             }
             else if (type === 'newPain') {
                 const painText = document.getElementById('painText').value.trim();
-                const costEstimate = document.getElementById('costEstimate').value.trim();
+                const costType = document.getElementById('costType').value;
+                const costAmount = document.getElementById('costAmount').value.trim();
                 const costContext = document.getElementById('costContext').value.trim();
                 
-                if (!painText) return;
+                if (!painText) {
+                    showNotification('Please enter a pain point description', 'error');
+                    return;
+                }
+                
+                if (!costType) {
+                    showNotification('Please select a cost type', 'error');
+                    return;
+                }
                 
                 const action = workflowData.phases[phaseIndex].flows[flowIndex].actions[actionIndex];
                 action.painText = painText;
                 action.hasPain = true;
                 action.painPosition = position;
-                action.costEstimate = costEstimate || '$0M';
                 action.costContext = costContext || 'No context provided.';
                 action.citations = [];
+                
+                // Set either costEstimate or actualCost based on selection
+                if (costType === 'estimate') {
+                    action.costEstimate = costAmount || '$0M';
+                    action.actualCost = null;
+                } else if (costType === 'actual') {
+                    action.costEstimate = '$0M'; // Default to $0M for research when user enters actual
+                    action.actualCost = costAmount || null;
+                }
+            }
+            else if (type === 'actualCost') {
+                const value = document.getElementById('actualCostInput').value.trim();
+                const action = workflowData.phases[phaseIndex].flows[flowIndex].actions[actionIndex];
+                action.actualCost = value || null;
+                
+                // Update the actual cost total immediately
+                updateActualCostTotal();
+                
+                // Reopen the drawer to show updated cost
+                closeModal();
+                openDrawer(phaseIndex, flowIndex, actionIndex);
+                showNotification('Actual cost updated', 'success');
+                return; // Don't render workflow, just update drawer
             }
             else if (type === 'newPersona') {
                 const value = document.getElementById('modalInput').value.trim();
@@ -2137,33 +2475,209 @@
             currentEditItem = null;
         }
 
-        function showCostBreakdown() {
-            // Aggregate costs by category
+        function showCostBreakdown(mode = 'research') {
+            const isActual = mode === 'actual';
+            
+            // Calculate actual costs if in actual mode
+            if (isActual) {
+                const actualCosts = calculateActualCostsByCategory();
+                displayActualCostBreakdown(actualCosts);
+            } else {
+                displayResearchCostBreakdown();
+            }
+        }
+
+        function calculateActualCostsByCategory() {
+            const categoryTotals = {
+                'Inadequate Data & Tooling': 0,
+                'Compliance Issues': 0,
+                'Event Driven OT': 0,
+                'Structural Understaffing': 0,
+                'Training & Readiness Gaps': 0,
+                'Oversight & Leakage': 0
+            };
+
+            const painPointsPerCategory = {
+                'Inadequate Data & Tooling': [],
+                'Compliance Issues': [],
+                'Event Driven OT': [],
+                'Structural Understaffing': [],
+                'Training & Readiness Gaps': [],
+                'Oversight & Leakage': []
+            };
+
+            // Map pain points to categories and sum actual costs
+            workflowData.phases.forEach(phase => {
+                phase.flows.forEach(flow => {
+                    flow.actions.forEach(action => {
+                        if (action.hasPain && action.actualCost) {
+                            const cost = parseCost(action.actualCost);
+                            const painText = action.painText.toLowerCase();
+                            
+                            // Categorize based on pain point text
+                            if (painText.includes('call-out') || painText.includes('answer phone') || painText.includes('call-in')) {
+                                categoryTotals['Inadequate Data & Tooling'] += cost;
+                                painPointsPerCategory['Inadequate Data & Tooling'].push({text: action.painText, cost: action.actualCost});
+                            } else if (painText.includes('mandatory ot') || painText.includes('late discovery') || painText.includes('fairness') || painText.includes('meta staffing')) {
+                                categoryTotals['Compliance Issues'] += cost;
+                                painPointsPerCategory['Compliance Issues'].push({text: action.painText, cost: action.actualCost});
+                            } else if (painText.includes('handoff') || painText.includes('count') || painText.includes('incident')) {
+                                categoryTotals['Event Driven OT'] += cost;
+                                painPointsPerCategory['Event Driven OT'].push({text: action.painText, cost: action.actualCost});
+                            } else if (painText.includes('no spare') || painText.includes('evening shift') || painText.includes('vacancy') || painText.includes('skip break')) {
+                                categoryTotals['Structural Understaffing'] += cost;
+                                painPointsPerCategory['Structural Understaffing'].push({text: action.painText, cost: action.actualCost});
+                            } else if (painText.includes('briefing') || painText.includes('unfamiliar post') || painText.includes('academy')) {
+                                categoryTotals['Training & Readiness Gaps'] += cost;
+                                painPointsPerCategory['Training & Readiness Gaps'].push({text: action.painText, cost: action.actualCost});
+                            } else {
+                                categoryTotals['Oversight & Leakage'] += cost;
+                                painPointsPerCategory['Oversight & Leakage'].push({text: action.painText, cost: action.actualCost});
+                            }
+                        }
+                    });
+                });
+            });
+
+            return {totals: categoryTotals, painPoints: painPointsPerCategory};
+        }
+
+        function parseCost(costString) {
+            if (!costString) return 0;
+            const cleaned = costString.replace(/[$,]/g, '').toUpperCase();
+            let value = parseFloat(cleaned);
+            if (cleaned.includes('K')) value *= 1000;
+            if (cleaned.includes('M')) value *= 1000000;
+            return value;
+        }
+
+        function formatCost(value) {
+            if (value >= 1000000) return '$' + (value / 1000000).toFixed(1) + 'M';
+            if (value >= 1000) return '$' + (value / 1000).toFixed(1) + 'K';
+            return '$' + value.toLocaleString();
+        }
+
+        function displayActualCostBreakdown(actualCosts) {
+            const breakdownContent = document.getElementById('breakdownContent');
+            const total = Object.values(actualCosts.totals).reduce((sum, val) => sum + val, 0);
+
+            if (total === 0) {
+                breakdownContent.innerHTML = `
+                    <div class="summary-box">
+                        <h3>Your Actual Overtime Costs</h3>
+                        <div class="big-number">No Data Yet</div>
+                        <div class="subtitle">Enter actual cost data in edit mode to see your calculated totals</div>
+                    </div>
+
+                    <div style="padding: 30px; text-align: center;">
+                        <p style="font-size: 16px; color: var(--text-medium); margin-bottom: 20px;">
+                            📝 To enter actual cost data:
+                        </p>
+                        <ol style="text-align: left; max-width: 500px; margin: 0 auto; line-height: 2;">
+                            <li>Toggle to <strong>Edit Mode</strong></li>
+                            <li>Click the <strong>ℹ️ icon</strong> on any pain point</li>
+                            <li>Click <strong>"Enter Actual Cost Data"</strong></li>
+                            <li>Enter your facility/system's actual cost for that pain point</li>
+                        </ol>
+                    </div>
+                `;
+                // Navigate to breakdown view
+                document.getElementById('workflowView').classList.remove('active');
+                document.getElementById('breakdownView').classList.add('active');
+                window.scrollTo(0, 0);
+                return;
+            }
+
+            let categoryHTML = '';
+            Object.entries(actualCosts.totals).forEach(([name, cost]) => {
+                if (cost === 0) return; // Skip categories with no data
+                
+                const percentage = ((cost / total) * 100).toFixed(1);
+                const barWidth = percentage;
+                const painPoints = actualCosts.painPoints[name];
+                
+                categoryHTML += `
+                    <div class="breakdown-item">
+                        <div class="breakdown-header">
+                            <span class="breakdown-category">${name}</span>
+                            <span class="breakdown-value">${formatCost(cost)}</span>
+                        </div>
+                        <div class="breakdown-bar" style="width: ${barWidth}%">
+                            <span class="breakdown-percentage">${percentage}%</span>
+                        </div>
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-gray);">
+                            <div style="font-size: 12px; font-weight: 700; color: var(--cost-red); margin-bottom: 6px;">YOUR PAIN POINTS:</div>
+                            <div style="font-size: 12px; color: var(--text-medium);">
+                                ${painPoints.map(pp => `${pp.text} (${pp.cost})`).join(' • ')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            breakdownContent.innerHTML = `
+                <div class="summary-box" style="background: linear-gradient(135deg, #059669, #047857);">
+                    <h3>Your Actual Overtime Costs</h3>
+                    <div class="big-number">${formatCost(total)}</div>
+                    <div class="subtitle">Based on your facility/system data</div>
+                </div>
+
+                <h3 style="margin-bottom: 20px; color: var(--primary-blue);">Your Cost Breakdown</h3>
+                ${categoryHTML}
+
+                <div style="margin-top: 20px; padding: 20px; background: #FEF3C7; border-radius: 12px; border-left: 4px solid #F59E0B;">
+                    <h4 style="color: #92400E; margin-bottom: 10px;">💡 Note</h4>
+                    <p style="font-size: 14px; line-height: 1.6; color: var(--text-dark);">
+                        This represents YOUR calculated costs based on the pain point data you've entered. 
+                        Compare this with the national research estimates (💰 Research badge) to validate your assumptions.
+                    </p>
+                </div>
+            `;
+
+            // Navigate to breakdown view
+            document.getElementById('workflowView').classList.remove('active');
+            document.getElementById('breakdownView').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function displayResearchCostBreakdown() {
+            // Aggregate costs by operational hypothesis categories
             const categories = {
-                'Emergency Response & Staffing Gaps': {
+                'Inadequate Data & Tooling': {
                     cost: 600,
-                    description: 'Last-minute call-outs, delayed responses, and inability to contact on-call officers requiring immediate overtime coverage.',
-                    painPoints: ['Last-minute call-outs ($420M)', 'Officers don\'t answer phones ($180M)']
+                    description: 'Poor call-in systems, inability to reach on-call officers, and lack of real-time visibility into who is actually available force reliance on emergency overtime.',
+                    painPoints: ['Last-minute call-outs requiring emergency response ($420M)', 'Officers don\'t answer phones delaying coverage ($180M)'],
+                    drivers: ['Call-in policy mechanics', 'Predictable call-outs', 'Operational vs. reported vacancy']
                 },
-                'Inadequate Shift Operations': {
-                    cost: 565,
-                    description: 'Rushed briefings, inadequate handoffs, and officers working unfamiliar posts requiring additional supervisory support.',
-                    painPoints: ['Short-staffed briefings ($150M)', 'Unfamiliar post assignments ($140M)', 'Rushed handoffs ($200M)', 'Facility lockdowns due to count errors ($180M)', 'Fatigue-related errors ($190M)']
-                },
-                'Minimum Staffing & No Buffer': {
-                    cost: 625,
-                    description: 'Operating at minimum staffing means any incident or unexpected event immediately requires overtime coverage.',
-                    painPoints: ['No spare capacity ($375M)', 'Break coverage issues ($250M)']
-                },
-                'Poor Scheduling & Planning': {
+                'Compliance Issues': {
                     cost: 485,
-                    description: 'Late discovery of staffing gaps and last-minute mandatory overtime notifications perpetuate the staffing crisis.',
-                    painPoints: ['Late discovery of evening gaps ($310M)', 'Last-minute OT notifications ($175M)']
+                    description: 'Not following meta staffing patterns and fairness protocols leads to last-minute mandatory overtime assignments and poor planning for predictable gaps.',
+                    painPoints: ['Last-minute mandatory OT notifications ($175M)', 'Late discovery of evening shift gaps ($310M)'],
+                    drivers: ['Meta staffing pattern not followed', 'Captains don\'t use "best next person" fairness lists']
                 },
-                'Chronic Evening Shift Understaffing': {
-                    cost: 130,
-                    description: 'Evening shifts have historically higher vacancy rates requiring continuous overtime to maintain operations.',
-                    painPoints: ['Evening shift vacancies ($130M)']
+                'Event Driven OT': {
+                    cost: 440,
+                    description: 'Dynamic incidents and operational failures (handoff errors, count discrepancies, fatigue-induced mistakes) require supervisory intervention and emergency coverage.',
+                    painPoints: ['Rushed handoffs losing information ($200M)', 'Count discrepancy lockdowns ($180M)', 'Officer fatigue errors after 12-16 hour shifts ($60M)'],
+                    drivers: ['Incidence driven issues', 'Handoff failures', 'Safety incidents']
+                },
+                'Structural Understaffing': {
+                    cost: 420,
+                    description: 'Operating at minimum staffing with no buffer capacity plus chronic vacancies. Every unplanned absence or additional need immediately triggers overtime.',
+                    painPoints: ['No spare capacity - any incident pulls officers ($375M)', 'Evening shift chronic vacancies ($130M)', 'Officers skip breaks creating fatigue ($250M split across)'],
+                    drivers: ['Zero-buffer operations', 'Vacancy rates', 'No relief coverage']
+                },
+                'Training & Readiness Gaps': {
+                    cost: 290,
+                    description: 'Insufficient academy throughput and officers working unfamiliar posts create inefficiencies and safety issues requiring additional supervisory support.',
+                    painPoints: ['Short-staffed briefings missing critical info ($150M)', 'Unfamiliar post assignments requiring extra supervision ($140M)'],
+                    drivers: ['Academy throughput', 'Training deficits', 'Post rotation issues']
+                },
+                'Oversight & Leakage': {
+                    cost: 250,
+                    description: 'Time leakage from officers arriving early or staying late (15 min increments rounded to 30 min) and inadequate tracking of actual hours worked.',
+                    painPoints: ['Systematic time rounding and uncaptured hours ($250M)'],
+                    drivers: ['Leakage (15 min early/late → 30 min rounding)', 'Hours worked not captured on roster']
                 }
             };
 
@@ -2186,8 +2700,11 @@
                             <span class="breakdown-percentage">${percentage}%</span>
                         </div>
                         <div class="breakdown-description">${data.description}</div>
-                        <div style="margin-top: 10px; font-size: 13px; color: var(--text-light);">
-                            <strong>Includes:</strong> ${data.painPoints.join(', ')}
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-gray);">
+                            <div style="font-size: 12px; font-weight: 700; color: var(--primary-blue); margin-bottom: 6px;">OPERATIONAL DRIVERS:</div>
+                            <div style="font-size: 12px; color: var(--text-medium); margin-bottom: 8px;">${data.drivers.join(' • ')}</div>
+                            <div style="font-size: 12px; font-weight: 700; color: var(--cost-red); margin-bottom: 6px;">SPECIFIC PAIN POINTS:</div>
+                            <div style="font-size: 12px; color: var(--text-medium);">${data.painPoints.join(' • ')}</div>
                         </div>
                     </div>
                 `;
@@ -2200,28 +2717,49 @@
                     <div class="subtitle">Based on aggregated state-level data and national corrections personnel costs</div>
                 </div>
 
-                <h3 style="margin-bottom: 20px; color: var(--primary-blue);">Key Cost Drivers</h3>
+                <h3 style="margin-bottom: 20px; color: var(--primary-blue);">Operational Hypothesis Categories</h3>
                 ${categoryHTML}
 
                 <div style="margin-top: 30px; padding: 20px; background: var(--light-blue); border-radius: 12px; border-left: 4px solid var(--primary-blue);">
                     <h4 style="color: var(--primary-blue); margin-bottom: 10px;">Methodology</h4>
-                    <p style="font-size: 14px; line-height: 1.6; color: var(--text-dark);">
+                    <p style="font-size: 14px; line-height: 1.6; color: var(--text-dark); margin-bottom: 12px;">
                         Cost estimates are derived from reported overtime expenditures in multiple states including 
                         Illinois ($95.5M), Connecticut ($110.8M), Nebraska ($22M), Maryland ($150M), New York (significant 
                         portion of $1.3B state OT), California ($340M in 2015), and Georgia ($4M+). These figures were 
                         extrapolated nationally based on total correctional employment (~432,000 officers nationwide) and 
-                        personnel costs representing 68% of total prison spending (~$43B). Pain point allocations are based 
-                        on root cause analysis from correctional research literature, DOJ Inspector General reports, and 
-                        corrections officer testimony.
+                        personnel costs representing 68% of total prison spending (~$43B).
                     </p>
+                    <p style="font-size: 14px; line-height: 1.6; color: var(--text-dark);">
+                        Pain points were mapped to operational categories based on root cause analysis from correctional 
+                        research literature, DOJ Inspector General reports, corrections officer testimony, and operational 
+                        hypothesis framework. Categories align with operational drivers identified through facility-level 
+                        analysis of overtime triggers and staffing pattern compliance.
+                    </p>
+                </div>
+
+                <div style="margin-top: 20px; padding: 20px; background: #FEF3C7; border-radius: 12px; border-left: 4px solid #F59E0B;">
+                    <h4 style="color: #92400E; margin-bottom: 10px;">📊 Key Insights</h4>
+                    <ul style="font-size: 14px; line-height: 1.8; color: var(--text-dark); margin-left: 20px;">
+                        <li><strong>Data & Tooling (24%)</strong> is the largest category, showing significant ROI opportunity in improving call-in systems and real-time visibility.</li>
+                        <li><strong>Compliance (19%)</strong> suggests enforcing existing meta staffing patterns and fairness protocols could reduce nearly $500M in OT.</li>
+                        <li><strong>Event Driven OT (17%)</strong> focuses specifically on incidents and operational failures that require emergency response—distinct from structural capacity issues.</li>
+                        <li><strong>Structural Understaffing (17%)</strong> represents the zero-buffer problem where facilities lack capacity to absorb ANY variation without triggering OT.</li>
+                        <li><strong>Training Gaps (12%)</strong> indicates need for better academy throughput and post familiarization to reduce supervisory burden.</li>
+                        <li><strong>Oversight & Leakage (10%)</strong> shows how time rounding and tracking gaps add up to significant waste.</li>
+                    </ul>
                 </div>
             `;
 
-            document.getElementById('breakdownModal').classList.add('active');
+            // Navigate to breakdown view
+            document.getElementById('workflowView').classList.remove('active');
+            document.getElementById('breakdownView').classList.add('active');
+            window.scrollTo(0, 0);
         }
 
-        function closeBreakdownModal() {
-            document.getElementById('breakdownModal').classList.remove('active');
+        function showWorkflowView() {
+            document.getElementById('breakdownView').classList.remove('active');
+            document.getElementById('workflowView').classList.add('active');
+            window.scrollTo(0, 0);
         }
 
         function showNotification(message, type = 'success') {
