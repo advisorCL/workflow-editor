@@ -6,9 +6,8 @@
     <title>Correctional Shift Management - Cost Analysis</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDK v9 (modular) -->
-    <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
         * {
@@ -1378,96 +1377,26 @@
 
     <script>
         // ============================================
-        // FIREBASE CONFIGURATION
+        // SUPABASE CONFIGURATION
         // ============================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyCqlGHUyXqiwKba8bZeUxuDsz8BG0v9kD8",
-            authDomain: "workflow-editor-6bb0b.firebaseapp.com",
-            projectId: "workflow-editor-6bb0b",
-            storageBucket: "workflow-editor-6bb0b.firebasestorage.app",
-            messagingSenderId: "363265686774",
-            appId: "1:363265686774:web:9ebfa14d2b6dab004300d7"
-        };
-
-        // Initialize Firebase
-        let db = null;
-        let isFirebaseEnabled = false;
+        const SUPABASE_URL = 'https://nwlhpdxmxaiidyncqouf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53bGhwZHhteGFpaWR5bmNxb3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5Mzk2NjgsImV4cCI6MjA1MzUxNTY2OH0.rilJVsan_L6ll39UfSTDEQVqQgdiJmQ';
         
-        // Wait for Firebase SDK to load
-        function initializeFirebase() {
-            try {
-                // Check if Firebase SDK is loaded
-                if (typeof firebase === 'undefined') {
-                    console.log("⏳ Waiting for Firebase SDK to load...");
-                    return false;
-                }
-                
-                // Check if Firebase config is set up (not default values)
-                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
-                    firebase.initializeApp(firebaseConfig);
-                    db = firebase.firestore();
-                    isFirebaseEnabled = true;
-                    console.log("✅ Firebase enabled - Multi-user mode active");
-                    setTimeout(() => updateConnectionStatus('connected'), 1000);
-                    return true;
-                } else {
-                    console.log("⚠️ Firebase not configured - Using local storage (single-user mode)");
-                    setTimeout(() => updateConnectionStatus('local'), 1000);
-                    return false;
-                }
-            } catch (error) {
-                console.error("❌ Firebase initialization error:", error);
-                console.log("⚠️ Falling back to local storage");
-                setTimeout(() => updateConnectionStatus('local'), 1000);
-                return false;
-            }
-        }
+        // Initialize Supabase
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        let isSupabaseEnabled = true;
         
-        // Try to initialize with retries
-        let firebaseInitialized = false;
-        let retryCount = 0;
-        const maxRetries = 5;
-        
-        function tryInitializeFirebase() {
-            // Check if running from file:// protocol
-            if (window.location.protocol === 'file:') {
-                console.warn("⚠️ WARNING: Running from file:// protocol");
-                console.warn("Firebase requires HTTP/HTTPS. Please:");
-                console.warn("1. Upload to GitHub Pages, OR");
-                console.warn("2. Use a local server (e.g., python -m http.server)");
-                setTimeout(() => updateConnectionStatus('local'), 1000);
-                return;
-            }
-            
-            if (typeof firebase !== 'undefined') {
-                firebaseInitialized = initializeFirebase();
-                if (firebaseInitialized) {
-                    console.log("🎉 Firebase ready!");
-                }
-            } else if (retryCount < maxRetries) {
-                retryCount++;
-                console.log(`⏳ Retry ${retryCount}/${maxRetries} - Waiting for Firebase SDK...`);
-                setTimeout(tryInitializeFirebase, 500);
-            } else {
-                console.log("⚠️ Firebase SDK not loaded after retries");
-                console.log("💡 Check:");
-                console.log("   - Are you online?");
-                console.log("   - Is www.gstatic.com blocked?");
-                console.log("   - Check browser console for script errors");
-                console.log("📍 Falling back to local storage mode");
-                setTimeout(() => updateConnectionStatus('local'), 1000);
-            }
-        }
-        
-        // Start trying to initialize
-        setTimeout(tryInitializeFirebase, 100);
+        console.log('✅ Supabase initialized - Multi-user mode active');
+        setTimeout(() => updateConnectionStatus('connected'), 1000);
 
         // ============================================
         // APPLICATION CODE
         // ============================================
         const ACCESS_CODE = 'workflow2026';
         const STORAGE_KEY = 'workflow-cost-data';
-        const FIREBASE_DOC_ID = 'workflow-main'; // Single shared document for all users
+        const TABLE_NAME = 'workflows';
+        const DOC_ID = 'main';
         
         let workflowData = null;
         let isEditMode = false;
@@ -1837,47 +1766,77 @@
         }
 
         async function showDebugInfo() {
+            console.log('🔧 ========== DEBUG INFO ==========');
+            
             const info = {
-                firebaseEnabled: isFirebaseEnabled,
-                apiKeyConfigured: firebaseConfig.apiKey !== "YOUR_API_KEY",
-                hasDatabase: db !== null,
+                supabaseEnabled: isSupabaseEnabled,
                 currentUser: currentUser,
-                workflowDataSize: JSON.stringify(workflowData).length
+                workflowDataSize: JSON.stringify(workflowData).length,
+                protocol: window.location.protocol,
+                hostname: window.location.hostname
             };
 
-            let firestoreStatus = 'Not configured';
-            if (isFirebaseEnabled && db) {
+            console.log('🔧 Supabase Enabled:', info.supabaseEnabled);
+            console.log('🔧 Current User:', info.currentUser);
+            console.log('🔧 Data Size:', info.workflowDataSize, 'bytes');
+            console.log('🔧 Protocol:', info.protocol);
+            console.log('🔧 Hostname:', info.hostname);
+
+            let supabaseStatus = 'Not configured';
+            if (isSupabaseEnabled) {
                 try {
-                    const docRef = db.collection('workflows').doc(FIREBASE_DOC_ID);
-                    const doc = await docRef.get();
-                    firestoreStatus = doc.exists ? '✅ Document exists' : '⚠️ Document not found';
-                    info.lastUpdate = doc.exists ? doc.data().lastUpdated : null;
-                    info.lastUpdatedBy = doc.exists ? doc.data().lastUpdatedBy : null;
+                    console.log('🔧 Attempting to read from Supabase...');
+                    const { data, error } = await supabase
+                        .from(TABLE_NAME)
+                        .select('*')
+                        .eq('id', DOC_ID)
+                        .single();
+                    
+                    if (data) {
+                        supabaseStatus = '✅ Document exists';
+                        info.lastUpdate = data.last_updated;
+                        info.lastUpdatedBy = data.last_updated_by;
+                        info.supabasePhases = data.workflow?.phases?.length;
+                        info.supabaseDataSize = JSON.stringify(data.workflow).length;
+                        
+                        console.log('✅ Document found');
+                        console.log('✅ Last Updated:', info.lastUpdate);
+                        console.log('✅ Last Updated By:', info.lastUpdatedBy);
+                        console.log('✅ Phases in Supabase:', info.supabasePhases);
+                        console.log('✅ Data size in Supabase:', info.supabaseDataSize, 'bytes');
+                    } else {
+                        supabaseStatus = '⚠️ Document not found';
+                        console.log('⚠️ Document does not exist in Supabase');
+                    }
                 } catch (error) {
-                    firestoreStatus = '❌ Error: ' + error.message;
+                    supabaseStatus = '❌ Error: ' + error.message;
+                    console.error('❌ Supabase read error:', error);
                 }
             }
-            info.firestoreStatus = firestoreStatus;
+            info.supabaseStatus = supabaseStatus;
 
-            alert(`🔧 Debug Information:\n\n` +
-                `Firebase Enabled: ${info.firebaseEnabled}\n` +
-                `API Key Configured: ${info.apiKeyConfigured}\n` +
-                `Database Connection: ${info.hasDatabase}\n` +
-                `Firestore Status: ${info.firestoreStatus}\n` +
+            console.log('🔧 Supabase Status:', supabaseStatus);
+            console.log('🔧 ================================');
+
+            const alertMessage = `🔧 Debug Information:\n\n` +
+                `Supabase Enabled: ${info.supabaseEnabled}\n` +
+                `Database Status: ${info.supabaseStatus}\n` +
+                `Protocol: ${info.protocol}\n` +
+                `Hostname: ${info.hostname}\n\n` +
                 `Current User: ${info.currentUser}\n` +
-                `Data Size: ${info.workflowDataSize} bytes\n` +
-                `Last Updated: ${info.lastUpdate || 'Never'}\n` +
-                `Last Updated By: ${info.lastUpdatedBy || 'N/A'}\n\n` +
-                `Check browser console (F12) for detailed logs.`
-            );
-            console.log('🔧 Full Debug Info:', info);
+                `Local Data Size: ${info.workflowDataSize} bytes\n` +
+                `Local Phases: ${workflowData?.phases?.length}\n\n` +
+                (info.supabasePhases ? 
+                    `Supabase Phases: ${info.supabasePhases}\n` +
+                    `Supabase Data Size: ${info.supabaseDataSize} bytes\n` +
+                    `Last Updated: ${info.lastUpdate || 'Never'}\n` +
+                    `Last Updated By: ${info.lastUpdatedBy || 'N/A'}\n\n` : '') +
+                `Check browser console (F12) for detailed logs.`;
+
+            alert(alertMessage);
         }
 
         function init() {
-            // Ensure Firebase is initialized
-            if (!firebaseInitialized && typeof firebase !== 'undefined') {
-                initializeFirebase();
-            }
             setupEventListeners();
             loadWorkflowData();
         }
@@ -1927,27 +1886,113 @@
         }
 
         function loadWorkflowData() {
-            if (isFirebaseEnabled) {
-                loadFromFirebase();
+            if (isSupabaseEnabled) {
+                loadFromSupabase();
             } else {
                 loadFromLocalStorage();
             }
         }
 
-        async function loadFromFirebase() {
+        async function loadFromSupabase() {
             try {
+                console.log('🔵 [LOAD] Starting Supabase load...');
+                showNotification('Loading shared data...', 'success');
+                
+                const { data, error } = await supabase
+                    .from(TABLE_NAME)
+                    .select('*')
+                    .eq('id', DOC_ID)
+                    .single();
+                
+                if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+                    throw error;
+                }
+                
+                console.log('🔵 [LOAD] Document exists?', !!data);
+                
+                if (data && data.workflow) {
+                    console.log('🔵 [LOAD] Has workflow data');
+                    console.log('🔵 [LOAD] Workflow size:', JSON.stringify(data.workflow).length, 'bytes');
+                    
+                    workflowData = data.workflow;
+                    console.log('✅ [LOAD] Loaded data from Supabase successfully');
+                    console.log('🔵 [LOAD] Workflow has', workflowData?.phases?.length, 'phases');
+                } else {
+                    console.log('⚠️ [LOAD] Document does not exist - initializing with default data');
+                    workflowData = DEFAULT_DATA;
+                    await saveToSupabase();
+                    console.log('✅ [LOAD] Initialized Supabase with default data');
+                }
+                
+                renderWorkflow();
+                updateActualCostTotal();
+                
+                // Set up real-time listener
+                setupRealtimeListener();
+                console.log('✅ [LISTENER] Real-time listener active');
+                
+            } catch (error) {
+                console.error('❌ [LOAD] Supabase load error:', error);
+                console.error('❌ [LOAD] Error details:', error.code, error.message);
+                showNotification('Error loading shared data, using local backup', 'error');
+                loadFromLocalStorage();
+            }
+        }
+
+        function setupRealtimeListener() {
+            // Subscribe to realtime changes
+            const channel = supabaseClient
+                .channel('workflow-changes')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: TABLE_NAME,
+                        filter: `id=eq.${DOC_ID}`
+                    },
+                    (payload) => {
+                        console.log('📥 [LISTENER] Received update from another user');
+                        if (payload.new && payload.new.workflow) {
+                            const newData = payload.new.workflow;
+                            const newDataStr = JSON.stringify(newData);
+                            const currentDataStr = JSON.stringify(workflowData);
+                            
+                            if (newDataStr !== currentDataStr) {
+                                console.log('📥 [LISTENER] Data changed, updating...');
+                                workflowData = newData;
+                                renderWorkflow();
+                                updateActualCostTotal();
+                                showNotification('📥 Data updated by another user', 'success');
+                            }
+                        }
+                    }
+                )
+                .subscribe();
+        }
+            try {
+                console.log('🔵 [LOAD] Starting Firebase load...');
                 showNotification('Loading shared data...', 'success');
                 const docRef = db.collection('workflows').doc(FIREBASE_DOC_ID);
+                console.log('🔵 [LOAD] Document reference:', FIREBASE_DOC_ID);
+                
                 const doc = await docRef.get();
+                console.log('🔵 [LOAD] Document exists?', doc.exists);
                 
                 if (doc.exists) {
-                    workflowData = doc.data().workflow;
-                    console.log('✅ Loaded data from Firebase');
+                    const data = doc.data();
+                    console.log('🔵 [LOAD] Document data keys:', Object.keys(data));
+                    console.log('🔵 [LOAD] Has workflow?', !!data.workflow);
+                    console.log('🔵 [LOAD] Workflow size:', JSON.stringify(data.workflow).length, 'bytes');
+                    
+                    workflowData = data.workflow;
+                    console.log('✅ [LOAD] Loaded data from Firebase successfully');
+                    console.log('🔵 [LOAD] Workflow has', workflowData?.phases?.length, 'phases');
                 } else {
-                    // First time - initialize with default data
+                    console.log('⚠️ [LOAD] Document does not exist - initializing with default data');
                     workflowData = DEFAULT_DATA;
                     await saveToFirebase();
-                    console.log('✅ Initialized Firebase with default data');
+                    console.log('✅ [LOAD] Initialized Firebase with default data');
                 }
                 
                 renderWorkflow();
@@ -1957,36 +2002,51 @@
                 let isOwnSave = false;
                 window.setOwnSaveFlag = () => { isOwnSave = true; };
                 
+                console.log('🔵 [LISTENER] Setting up real-time listener...');
                 docRef.onSnapshot((doc) => {
+                    console.log('🔵 [LISTENER] Snapshot received, isOwnSave:', isOwnSave);
                     if (doc.exists && !isOwnSave) {
                         const newData = doc.data().workflow;
-                        // Update if data changed
                         const newDataStr = JSON.stringify(newData);
                         const currentDataStr = JSON.stringify(workflowData);
                         
+                        console.log('🔵 [LISTENER] New data size:', newDataStr.length, 'bytes');
+                        console.log('🔵 [LISTENER] Current data size:', currentDataStr.length, 'bytes');
+                        console.log('🔵 [LISTENER] Data changed?', newDataStr !== currentDataStr);
+                        
                         if (newDataStr !== currentDataStr) {
-                            console.log('📥 Received update from another user');
+                            console.log('📥 [LISTENER] Received update from another user');
                             workflowData = newData;
                             renderWorkflow();
                             updateActualCostTotal();
                             showNotification('📥 Data updated by another user', 'success');
                         }
                     }
-                    isOwnSave = false; // Reset flag
+                    isOwnSave = false;
                 });
+                console.log('✅ [LISTENER] Real-time listener active');
                 
             } catch (error) {
-                console.error('Firebase load error:', error);
+                console.error('❌ [LOAD] Firebase load error:', error);
+                console.error('❌ [LOAD] Error details:', error.code, error.message);
                 showNotification('Error loading shared data, using local backup', 'error');
                 loadFromLocalStorage();
             }
         }
 
         function loadFromLocalStorage() {
+            console.log('💾 [LOCAL] Loading from localStorage...');
             try {
                 const saved = localStorage.getItem(STORAGE_KEY);
-                workflowData = saved ? JSON.parse(saved) : DEFAULT_DATA;
+                if (saved) {
+                    workflowData = JSON.parse(saved);
+                    console.log('✅ [LOCAL] Loaded from localStorage -', workflowData?.phases?.length, 'phases');
+                } else {
+                    workflowData = DEFAULT_DATA;
+                    console.log('⚠️ [LOCAL] No saved data, using defaults');
+                }
             } catch (e) {
+                console.error('❌ [LOCAL] Error loading from localStorage:', e);
                 workflowData = DEFAULT_DATA;
             }
             renderWorkflow();
@@ -1994,32 +2054,59 @@
         }
 
         function saveWorkflowData() {
-            if (isFirebaseEnabled) {
-                saveToFirebase();
+            if (isSupabaseEnabled) {
+                saveToSupabase();
             } else {
                 saveToLocalStorage();
             }
         }
 
-        async function saveToFirebase() {
+        async function saveToSupabase() {
             try {
-                if (window.setOwnSaveFlag) window.setOwnSaveFlag();
+                console.log('🟢 [SAVE] Starting Supabase save...');
+                console.log('🟢 [SAVE] Data to save - phases:', workflowData?.phases?.length);
+                console.log('🟢 [SAVE] Data size:', JSON.stringify(workflowData).length, 'bytes');
                 
-                const docRef = db.collection('workflows').doc(FIREBASE_DOC_ID);
-                await docRef.set({
-                    workflow: workflowData,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastUpdatedBy: currentUser || 'Unknown'
-                });
+                const { data, error} = await supabase
+                    .from(TABLE_NAME)
+                    .upsert({
+                        id: DOC_ID,
+                        workflow: workflowData,
+                        last_updated: new Date().toISOString(),
+                        last_updated_by: currentUser || 'Unknown'
+                    })
+                    .select();
+                
+                if (error) throw error;
+                
+                console.log('🟢 [SAVE] Supabase upsert completed');
                 
                 // Also save to localStorage as backup
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(workflowData));
+                console.log('🟢 [SAVE] LocalStorage backup saved');
                 
                 updateActualCostTotal();
                 showNotification('✅ Changes saved and synced!', 'success');
-                console.log('📤 Saved to Firebase successfully');
+                console.log('✅ [SAVE] Save completed successfully');
+                
+                // Verify the save
+                const { data: verifyData, error: verifyError } = await supabase
+                    .from(TABLE_NAME)
+                    .select('*')
+                    .eq('id', DOC_ID)
+                    .single();
+                
+                if (verifyData) {
+                    console.log('✅ [SAVE] Verification: Document exists in Supabase');
+                    console.log('✅ [SAVE] Verification: Saved data has', verifyData.workflow?.phases?.length, 'phases');
+                } else {
+                    console.error('❌ [SAVE] Verification FAILED: Document not found after save!');
+                }
+                
             } catch (error) {
-                console.error('❌ Firebase save error:', error);
+                console.error('❌ [SAVE] Supabase save error:', error);
+                console.error('❌ [SAVE] Error message:', error.message);
+                console.error('❌ [SAVE] Full error:', error);
                 showNotification('⚠️ Error syncing to cloud, saved locally only', 'error');
                 saveToLocalStorage();
             }
