@@ -1382,13 +1382,31 @@
         const SUPABASE_URL = 'https://nwlhpdxmxaiidyncqouf.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53bGhwZHhteGFpaWR5bmNxb3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5Mzk2NjgsImV4cCI6MjA1MzUxNTY2OH0.rilJVsan_L6ll39UfSTDEQVqQgdiJmQ';
         
-        // Initialize Supabase
-        const { createClient } = supabase;
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-        let isSupabaseEnabled = true;
+        // Initialize Supabase (will be set when library loads)
+        let supabaseClient = null;
+        let isSupabaseEnabled = false;
         
-        console.log('✅ Supabase initialized - Multi-user mode active');
-        setTimeout(() => updateConnectionStatus('connected'), 1000);
+        // Wait for Supabase library to load
+        function initSupabase() {
+            if (typeof supabase !== 'undefined' && supabase.createClient) {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                isSupabaseEnabled = true;
+                console.log('✅ Supabase initialized - Multi-user mode active');
+                setTimeout(() => updateConnectionStatus('connected'), 1000);
+                return true;
+            }
+            return false;
+        }
+        
+        // Try to initialize immediately or wait for load
+        if (!initSupabase()) {
+            window.addEventListener('load', () => {
+                if (!initSupabase()) {
+                    console.error('❌ Supabase library failed to load');
+                    setTimeout(() => updateConnectionStatus('local'), 1000);
+                }
+            });
+        }
 
         // ============================================
         // APPLICATION CODE
@@ -1397,6 +1415,7 @@
         const STORAGE_KEY = 'workflow-cost-data';
         const TABLE_NAME = 'workflows';
         const DOC_ID = 'main';
+        const DB_ACCESS_CODE = 'workflow2026'; // Access code for database security
         
         let workflowData = null;
         let isEditMode = false;
@@ -1786,10 +1805,11 @@
             if (isSupabaseEnabled) {
                 try {
                     console.log('🔧 Attempting to read from Supabase...');
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from(TABLE_NAME)
                         .select('*')
                         .eq('id', DOC_ID)
+                        .eq('access_code', DB_ACCESS_CODE)
                         .single();
                     
                     if (data) {
@@ -1898,10 +1918,11 @@
                 console.log('🔵 [LOAD] Starting Supabase load...');
                 showNotification('Loading shared data...', 'success');
                 
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from(TABLE_NAME)
                     .select('*')
                     .eq('id', DOC_ID)
+                    .eq('access_code', DB_ACCESS_CODE)
                     .single();
                 
                 if (error && error.code !== 'PGRST116') { // PGRST116 = not found
@@ -1970,69 +1991,6 @@
                 )
                 .subscribe();
         }
-            try {
-                console.log('🔵 [LOAD] Starting Firebase load...');
-                showNotification('Loading shared data...', 'success');
-                const docRef = db.collection('workflows').doc(FIREBASE_DOC_ID);
-                console.log('🔵 [LOAD] Document reference:', FIREBASE_DOC_ID);
-                
-                const doc = await docRef.get();
-                console.log('🔵 [LOAD] Document exists?', doc.exists);
-                
-                if (doc.exists) {
-                    const data = doc.data();
-                    console.log('🔵 [LOAD] Document data keys:', Object.keys(data));
-                    console.log('🔵 [LOAD] Has workflow?', !!data.workflow);
-                    console.log('🔵 [LOAD] Workflow size:', JSON.stringify(data.workflow).length, 'bytes');
-                    
-                    workflowData = data.workflow;
-                    console.log('✅ [LOAD] Loaded data from Firebase successfully');
-                    console.log('🔵 [LOAD] Workflow has', workflowData?.phases?.length, 'phases');
-                } else {
-                    console.log('⚠️ [LOAD] Document does not exist - initializing with default data');
-                    workflowData = DEFAULT_DATA;
-                    await saveToFirebase();
-                    console.log('✅ [LOAD] Initialized Firebase with default data');
-                }
-                
-                renderWorkflow();
-                updateActualCostTotal();
-                
-                // Set up real-time listener for changes from other users
-                let isOwnSave = false;
-                window.setOwnSaveFlag = () => { isOwnSave = true; };
-                
-                console.log('🔵 [LISTENER] Setting up real-time listener...');
-                docRef.onSnapshot((doc) => {
-                    console.log('🔵 [LISTENER] Snapshot received, isOwnSave:', isOwnSave);
-                    if (doc.exists && !isOwnSave) {
-                        const newData = doc.data().workflow;
-                        const newDataStr = JSON.stringify(newData);
-                        const currentDataStr = JSON.stringify(workflowData);
-                        
-                        console.log('🔵 [LISTENER] New data size:', newDataStr.length, 'bytes');
-                        console.log('🔵 [LISTENER] Current data size:', currentDataStr.length, 'bytes');
-                        console.log('🔵 [LISTENER] Data changed?', newDataStr !== currentDataStr);
-                        
-                        if (newDataStr !== currentDataStr) {
-                            console.log('📥 [LISTENER] Received update from another user');
-                            workflowData = newData;
-                            renderWorkflow();
-                            updateActualCostTotal();
-                            showNotification('📥 Data updated by another user', 'success');
-                        }
-                    }
-                    isOwnSave = false;
-                });
-                console.log('✅ [LISTENER] Real-time listener active');
-                
-            } catch (error) {
-                console.error('❌ [LOAD] Firebase load error:', error);
-                console.error('❌ [LOAD] Error details:', error.code, error.message);
-                showNotification('Error loading shared data, using local backup', 'error');
-                loadFromLocalStorage();
-            }
-        }
 
         function loadFromLocalStorage() {
             console.log('💾 [LOCAL] Loading from localStorage...');
@@ -2067,10 +2025,11 @@
                 console.log('🟢 [SAVE] Data to save - phases:', workflowData?.phases?.length);
                 console.log('🟢 [SAVE] Data size:', JSON.stringify(workflowData).length, 'bytes');
                 
-                const { data, error} = await supabase
+                const { data, error} = await supabaseClient
                     .from(TABLE_NAME)
                     .upsert({
                         id: DOC_ID,
+                        access_code: DB_ACCESS_CODE,
                         workflow: workflowData,
                         last_updated: new Date().toISOString(),
                         last_updated_by: currentUser || 'Unknown'
@@ -2090,10 +2049,11 @@
                 console.log('✅ [SAVE] Save completed successfully');
                 
                 // Verify the save
-                const { data: verifyData, error: verifyError } = await supabase
+                const { data: verifyData, error: verifyError } = await supabaseClient
                     .from(TABLE_NAME)
                     .select('*')
                     .eq('id', DOC_ID)
+                    .eq('access_code', DB_ACCESS_CODE)
                     .single();
                 
                 if (verifyData) {
